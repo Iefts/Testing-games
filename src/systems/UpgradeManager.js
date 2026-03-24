@@ -1,4 +1,13 @@
+import Phaser from 'phaser';
 import { UPGRADES } from '../config/Upgrades.js';
+
+export const TIER_COLORS = [
+  0x999999, // level 1: gray
+  0x66dd44, // level 2: green
+  0x44aaff, // level 3: blue
+  0xaa44ff, // level 4: purple
+  0xffdd44, // level 5: gold
+];
 
 export class UpgradeManager {
   constructor(scene, characterId) {
@@ -29,11 +38,27 @@ export class UpgradeManager {
 
     // Shuffle and pick up to count
     Phaser.Utils.Array.Shuffle(available);
-    return available.slice(0, count);
+    const selected = available.slice(0, count);
+
+    // 4% chance each upgrade is rare (upgrades 2 levels)
+    selected.forEach((upgrade) => {
+      if (Math.random() < 0.04) {
+        upgrade.isRare = true;
+        upgrade.nextLevel = Math.min(
+          upgrade.currentLevel + 2,
+          UPGRADES[upgrade.id].maxLevel
+        );
+      }
+    });
+
+    return selected;
   }
 
   applyUpgrade(upgradeId) {
-    this.acquired[upgradeId]++;
+    const max = UPGRADES[upgradeId].maxLevel;
+    if (this.acquired[upgradeId] < max) {
+      this.acquired[upgradeId]++;
+    }
     return this.acquired[upgradeId];
   }
 

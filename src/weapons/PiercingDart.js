@@ -7,8 +7,8 @@ export class PiercingDart {
     this.damage = stats.damage;
     this.fireRate = stats.fireRate;
     this.speed = stats.speed;
+    this.range = stats.range || 350;
     this.lastFired = 0;
-    this.range = 500;
 
     this.darts = scene.physics.add.group({
       maxSize: 20,
@@ -19,6 +19,7 @@ export class PiercingDart {
     this.damage = stats.damage;
     this.fireRate = stats.fireRate;
     this.speed = stats.speed;
+    this.range = stats.range || this.range;
   }
 
   update(time, enemies) {
@@ -84,8 +85,9 @@ export class PiercingDart {
       Math.sin(angle) * this.speed
     );
 
-    // Destroy after traveling far enough
-    this.scene.time.delayedCall(3000, () => {
+    // Destroy after traveling approximately 'range' pixels
+    const lifetime = (this.range / this.speed) * 1000;
+    this.scene.time.delayedCall(lifetime, () => {
       if (dart.active) {
         dart.setActive(false);
         dart.setVisible(false);

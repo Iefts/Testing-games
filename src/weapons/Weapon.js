@@ -82,8 +82,9 @@ export class Weapon {
     // Shoot sound
     this.scene.sound.play('sfx_shoot', { volume: 0.3 });
 
-    // Auto-destroy when out of range
-    this.scene.time.delayedCall(2000, () => {
+    // Auto-destroy after traveling approximately 'range' pixels
+    const lifetime = (this.range / this.bulletSpeed) * 1000;
+    this.scene.time.delayedCall(lifetime, () => {
       if (bullet.active) {
         bullet.setActive(false);
         bullet.setVisible(false);

@@ -68,8 +68,8 @@ export class Rapier extends Phaser.Physics.Arcade.Sprite {
       target.x, target.y
     );
 
-    // Position the rapier hitbox in front of the player
-    const thrustDist = 14;
+    // Position the rapier hitbox in front of the player (scales with range)
+    const thrustDist = this.range * 0.3;
     const tipX = this.player.x + Math.cos(angle) * thrustDist;
     const tipY = this.player.y + Math.sin(angle) * thrustDist;
 

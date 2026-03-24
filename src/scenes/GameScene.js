@@ -254,6 +254,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   applyUpgrade(upgrade) {
+    // Rare upgrades apply twice (capped at maxLevel by UpgradeManager)
+    const times = upgrade.isRare ? 2 : 1;
+
+    for (let i = 0; i < times; i++) {
+      this.applySingleUpgrade(upgrade);
+    }
+
+    // Refresh HUD upgrade icons
+    this.hud.updateUpgradeIcons(this.upgradeManager.acquired);
+  }
+
+  applySingleUpgrade(upgrade) {
     const newLevel = this.upgradeManager.applyUpgrade(upgrade.id);
     const stats = this.upgradeManager.getStats(upgrade.id);
 

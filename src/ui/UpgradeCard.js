@@ -8,8 +8,11 @@ export class UpgradeCard {
     const width = 240;
     const height = 200;
 
+    const isRare = upgrade.isRare;
+    const strokeColor = isRare ? 0xffdd44 : 0x6666aa;
+
     const bg = scene.add.rectangle(x, y, width, height, 0x222244, 0.9)
-      .setStrokeStyle(3, 0x6666aa)
+      .setStrokeStyle(3, strokeColor)
       .setInteractive({ useHandCursor: true })
       .setDepth(200);
     this.elements.push(bg);
@@ -42,13 +45,25 @@ export class UpgradeCard {
     }).setOrigin(0.5).setDepth(201);
     this.elements.push(descText);
 
+    // "RARE" label below description
+    if (isRare) {
+      const rareText = scene.add.text(x, y + 78, 'RARE', {
+        fontSize: '14px',
+        color: '#ffdd44',
+        fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(201);
+      this.elements.push(rareText);
+    }
+
+    const hoverStroke = isRare ? 0xffee88 : 0xaaaaff;
+
     bg.on('pointerover', () => {
       bg.setFillStyle(0x333366, 0.95);
-      bg.setStrokeStyle(3, 0xaaaaff);
+      bg.setStrokeStyle(3, hoverStroke);
     });
     bg.on('pointerout', () => {
       bg.setFillStyle(0x222244, 0.9);
-      bg.setStrokeStyle(3, 0x6666aa);
+      bg.setStrokeStyle(3, strokeColor);
     });
 
     bg.on('pointerdown', () => {

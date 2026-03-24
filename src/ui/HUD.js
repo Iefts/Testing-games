@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { UPGRADES } from '../config/Upgrades.js';
+import { TIER_COLORS } from '../systems/UpgradeManager.js';
 
 export class HUD {
   constructor(scene) {
@@ -33,6 +35,51 @@ export class HUD {
       fontSize: '16px',
       color: '#ffffff',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(101);
+
+    // Upgrade icons row (below bars)
+    this.upgradeSlots = [];
+  }
+
+  updateUpgradeIcons(acquired) {
+    // Destroy old icons
+    this.upgradeSlots.forEach((slot) => {
+      slot.border.destroy();
+      slot.icon.destroy();
+    });
+    this.upgradeSlots = [];
+
+    const startX = 10;
+    const startY = 48;
+    const size = 20;
+    const gap = 4;
+    let idx = 0;
+
+    Object.keys(acquired).forEach((id) => {
+      const level = acquired[id];
+      if (level <= 0) return;
+
+      const upgrade = UPGRADES[id];
+      if (!upgrade) return;
+
+      const x = startX + idx * (size + gap);
+      const y = startY;
+
+      const tierColor = TIER_COLORS[level - 1] || TIER_COLORS[4];
+
+      const border = this.scene.add.rectangle(x, y, size, size, 0x111122)
+        .setOrigin(0, 0)
+        .setStrokeStyle(2, tierColor)
+        .setScrollFactor(0)
+        .setDepth(100);
+
+      const icon = this.scene.add.sprite(x + size / 2, y + size / 2, upgrade.icon)
+        .setScrollFactor(0)
+        .setDepth(101)
+        .setScale(2);
+
+      this.upgradeSlots.push({ border, icon });
+      idx++;
+    });
   }
 
   update(player, xpSystem, timerSystem, killCount) {

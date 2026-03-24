@@ -52,11 +52,11 @@ export const UPGRADES = {
     maxLevel: 5,
     weaponClass: 'PiercingDart',
     statsPerLevel: [
-      { damage: 5, fireRate: 1500, speed: 250 },
-      { damage: 7, fireRate: 1300, speed: 275 },
-      { damage: 9, fireRate: 1100, speed: 300 },
-      { damage: 12, fireRate: 900, speed: 325 },
-      { damage: 16, fireRate: 700, speed: 350 },
+      { damage: 5, fireRate: 1500, speed: 250, range: 350 },
+      { damage: 7, fireRate: 1300, speed: 275, range: 380 },
+      { damage: 9, fireRate: 1100, speed: 300, range: 410 },
+      { damage: 12, fireRate: 900, speed: 325, range: 450 },
+      { damage: 16, fireRate: 700, speed: 350, range: 500 },
     ],
   },
   flameTrail: {
