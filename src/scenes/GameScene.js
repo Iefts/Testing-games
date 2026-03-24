@@ -29,6 +29,10 @@ export class GameScene extends Phaser.Scene {
     this.add.tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, 'grass')
       .setOrigin(0, 0);
 
+    // Scatter trees as obstacles
+    this.trees = this.physics.add.staticGroup();
+    this.spawnTrees();
+
     // Enemy group
     this.enemies = this.physics.add.group();
 
@@ -77,6 +81,9 @@ export class GameScene extends Phaser.Scene {
       null,
       this
     );
+
+    // Collisions: player bumps into trees
+    this.physics.add.collider(this.player, this.trees);
 
     // Camera follows player
     this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -136,10 +143,23 @@ export class GameScene extends Phaser.Scene {
   onEnemyHitPlayer(player, enemy) {
     if (!enemy.active) return;
     player.takeDamage(enemy.damage);
+    // Screen shake on hit
+    this.cameras.main.shake(100, 0.005);
   }
 
   onEnemyKilled(enemy) {
     this.killCount++;
+    // Death particle effect
+    const particles = this.add.particles(enemy.x, enemy.y, 'bullet', {
+      speed: { min: 30, max: 80 },
+      scale: { start: 1.5, end: 0 },
+      lifespan: 300,
+      quantity: 5,
+      tint: 0x44cc44,
+      emitting: false,
+    });
+    particles.explode();
+    this.time.delayedCall(400, () => particles.destroy());
   }
 
   onLevelUp(level) {
@@ -211,5 +231,25 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(1000, () => {
       this.scene.start('GameOver', { victory: true, stats: this.getStats() });
     });
+  }
+
+  spawnTrees() {
+    const treeCount = Math.floor(MAP_WIDTH * MAP_HEIGHT * 0.00002);
+    const playerX = MAP_WIDTH / 2;
+    const playerY = MAP_HEIGHT / 2;
+
+    for (let i = 0; i < treeCount; i++) {
+      const x = Phaser.Math.Between(40, MAP_WIDTH - 40);
+      const y = Phaser.Math.Between(40, MAP_HEIGHT - 40);
+
+      // Don't spawn trees too close to player start
+      const dist = Phaser.Math.Distance.Between(x, y, playerX, playerY);
+      if (dist < 80) continue;
+
+      const tree = this.trees.create(x, y, 'tree');
+      tree.body.setSize(8, 6);
+      tree.body.setOffset(4, 18);
+      tree.setDepth(y); // Trees in front overlap those behind
+    }
   }
 }
