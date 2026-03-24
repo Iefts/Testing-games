@@ -39,6 +39,28 @@ export class MenuScene extends Phaser.Scene {
       this.scene.start('CharacterSelect');
     });
 
+    // Multiplayer button
+    const mpBtn = this.add.text(480, 430, 'MULTIPLAYER', {
+      fontSize: '24px',
+      color: '#44aaff',
+      fontStyle: 'bold',
+      backgroundColor: '#333355',
+      padding: { x: 30, y: 12 },
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    mpBtn.on('pointerover', () => {
+      mpBtn.setColor('#66ccff');
+      mpBtn.setBackgroundColor('#444466');
+    });
+    mpBtn.on('pointerout', () => {
+      mpBtn.setColor('#44aaff');
+      mpBtn.setBackgroundColor('#333355');
+    });
+    mpBtn.on('pointerdown', () => {
+      this.sound.play('sfx_buttonClick', { volume: 0.4 });
+      this.scene.start('Lobby');
+    });
+
     this.input.keyboard.on('keydown-ENTER', () => {
       this.scene.start('CharacterSelect');
     });
