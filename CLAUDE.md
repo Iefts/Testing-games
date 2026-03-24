@@ -13,5 +13,6 @@ Game development testing project. The repository is in its early stages.
 
 ## Workflow
 
-- All changes should be committed with clean, descriptive messages and pushed to GitHub.
+- **Commit early and often.** After every meaningful piece of work (new feature, bug fix, refactor, config change), create a commit with a clean, descriptive message and push to GitHub. Never leave work uncommitted — we must always be able to revert to any prior state.
+- Commit messages should clearly describe *what* changed and *why*.
 - Use the `.gitignore` already in place to avoid committing OS files, editor config, env secrets, or build artifacts.
