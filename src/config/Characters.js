@@ -6,5 +6,6 @@ export const CHARACTERS = {
     hp: 100,
     speed: 200,
     startingWeapon: 'revolver',
+    weaponUpgrade: 'revolverUp',
   },
 };

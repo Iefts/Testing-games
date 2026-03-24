@@ -1,8 +1,9 @@
 import { UPGRADES } from '../config/Upgrades.js';
 
 export class UpgradeManager {
-  constructor(scene) {
+  constructor(scene, characterId) {
     this.scene = scene;
+    this.characterId = characterId;
     // Track current level of each upgrade (0 = not acquired)
     this.acquired = {};
     Object.keys(UPGRADES).forEach((id) => {
@@ -11,10 +12,12 @@ export class UpgradeManager {
   }
 
   getRandomUpgrades(count = 3) {
-    // Build pool of available upgrades (not maxed)
+    // Build pool of available upgrades (not maxed, matching character)
     const available = [];
     Object.keys(UPGRADES).forEach((id) => {
       const upgrade = UPGRADES[id];
+      // Skip character-specific upgrades that don't belong to this character
+      if (upgrade.characterOnly && upgrade.characterOnly !== this.characterId) return;
       if (this.acquired[id] < upgrade.maxLevel) {
         available.push({
           ...upgrade,

@@ -11,4 +11,11 @@ export class Revolver extends Weapon {
       maxBullets: 30,
     });
   }
+
+  updateStats(stats) {
+    this.fireRate = stats.fireRate;
+    this.damage = stats.damage;
+    this.bulletSpeed = stats.bulletSpeed;
+    this.range = stats.range;
+  }
 }

@@ -171,6 +171,18 @@ export function generateSounds(scene) {
     }
   }, 0.12);
 
+  createSound(scene, audioCtx, 'sfx_bugBite', (ctx, buf) => {
+    // Tiny chittering bite
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 50);
+      data[i] = env * (Math.random() * 2 - 1) * 0.15;
+      data[i] += env * Math.sin(t * 2000) * 0.08;
+      data[i] *= (Math.sin(t * 150) * 0.5 + 0.5); // rapid chittering
+    }
+  }, 0.06);
+
   createSound(scene, audioCtx, 'sfx_tornado', (ctx, buf) => {
     // Sustained wind whoosh
     const data = buf.getChannelData(0);

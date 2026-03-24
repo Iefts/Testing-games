@@ -14,6 +14,7 @@ import { PiercingDart } from '../weapons/PiercingDart.js';
 import { SpearRain } from '../weapons/SpearRain.js';
 import { FlameTrail } from '../weapons/FlameTrail.js';
 import { Tornado } from '../weapons/Tornado.js';
+import { BugSwarm } from '../weapons/BugSwarm.js';
 import { HUD } from '../ui/HUD.js';
 
 export class GameScene extends Phaser.Scene {
@@ -40,20 +41,22 @@ export class GameScene extends Phaser.Scene {
     this.enemies = this.physics.add.group();
 
     // Create player at center of map
-    const charConfig = CHARACTERS.human;
+    const charId = this.registry.get('character') || 'human';
+    const charConfig = CHARACTERS[charId];
+    this.characterId = charId;
     this.player = new Player(this, MAP_WIDTH / 2, MAP_HEIGHT / 2, charConfig);
 
     // Input manager
     this.inputManager = new InputManager(this);
 
-    // Weapons (revolver is always active)
+    // Weapons (starting weapon is always active)
     this.weapons = [];
     this.upgradeWeapons = {}; // keyed by upgrade id
     this.revolver = new Revolver(this, this.player);
     this.weapons.push(this.revolver);
 
-    // Upgrade manager
-    this.upgradeManager = new UpgradeManager(this);
+    // Upgrade manager (pass character ID for character-specific upgrades)
+    this.upgradeManager = new UpgradeManager(this, charId);
 
     // Spawn system
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemies);
@@ -198,6 +201,12 @@ export class GameScene extends Phaser.Scene {
     const newLevel = this.upgradeManager.applyUpgrade(upgrade.id);
     const stats = this.upgradeManager.getStats(upgrade.id);
 
+    // Revolver upgrade applies directly to the existing revolver
+    if (upgrade.id === 'revolverUp') {
+      this.revolver.updateStats(stats);
+      return;
+    }
+
     if (this.upgradeWeapons[upgrade.id]) {
       // Upgrade existing weapon
       this.upgradeWeapons[upgrade.id].updateStats(stats);
@@ -225,6 +234,10 @@ export class GameScene extends Phaser.Scene {
           break;
         case 'tornado':
           weapon = new Tornado(this, this.player, stats);
+          weapon.setupCollision(this.enemies);
+          break;
+        case 'bugs':
+          weapon = new BugSwarm(this, this.player, stats);
           weapon.setupCollision(this.enemies);
           break;
       }

@@ -11,6 +11,7 @@ export function generateSprites(scene) {
   generateSpear(scene);
   generateFlame(scene);
   generateTornado(scene);
+  generateBugs(scene);
 }
 
 function generatePlayer(scene) {
@@ -347,4 +348,61 @@ function generateTornado(scene) {
   gfx.fillRect(5, 13, 1, 1);
   gfx.generateTexture('tornado', 12, 20);
   gfx.destroy();
+}
+
+function generateBugs(scene) {
+  // Light green bug (5x4)
+  const gfx1 = scene.make.graphics({ add: false });
+  gfx1.fillStyle(0x66dd44);
+  gfx1.fillRect(1, 0, 3, 3); // body
+  gfx1.fillStyle(0x88ff66);
+  gfx1.fillRect(1, 0, 2, 1); // head highlight
+  // Legs
+  gfx1.fillStyle(0x44aa22);
+  gfx1.fillRect(0, 1, 1, 1);
+  gfx1.fillRect(4, 1, 1, 1);
+  gfx1.fillRect(0, 2, 1, 1);
+  gfx1.fillRect(4, 2, 1, 1);
+  // Eyes
+  gfx1.fillStyle(0x000000);
+  gfx1.fillRect(1, 1, 1, 1);
+  gfx1.fillRect(3, 1, 1, 1);
+  gfx1.generateTexture('bug_light', 5, 4);
+  gfx1.destroy();
+
+  // Dark green bug (5x4)
+  const gfx2 = scene.make.graphics({ add: false });
+  gfx2.fillStyle(0x338822);
+  gfx2.fillRect(1, 0, 3, 3); // body
+  gfx2.fillStyle(0x44aa33);
+  gfx2.fillRect(1, 0, 2, 1); // head highlight
+  // Legs
+  gfx2.fillStyle(0x226611);
+  gfx2.fillRect(0, 1, 1, 1);
+  gfx2.fillRect(4, 1, 1, 1);
+  gfx2.fillRect(0, 2, 1, 1);
+  gfx2.fillRect(4, 2, 1, 1);
+  // Eyes
+  gfx2.fillStyle(0x000000);
+  gfx2.fillRect(1, 1, 1, 1);
+  gfx2.fillRect(3, 1, 1, 1);
+  gfx2.generateTexture('bug_dark', 5, 4);
+  gfx2.destroy();
+
+  // Also create a combined 'bug' icon for the upgrade card
+  const gfx3 = scene.make.graphics({ add: false });
+  // Light bug top-left
+  gfx3.fillStyle(0x66dd44);
+  gfx3.fillRect(1, 0, 3, 3);
+  gfx3.fillStyle(0x44aa22);
+  gfx3.fillRect(0, 1, 1, 1);
+  gfx3.fillRect(4, 1, 1, 1);
+  // Dark bug bottom-right
+  gfx3.fillStyle(0x338822);
+  gfx3.fillRect(4, 3, 3, 3);
+  gfx3.fillStyle(0x226611);
+  gfx3.fillRect(3, 4, 1, 1);
+  gfx3.fillRect(7, 4, 1, 1);
+  gfx3.generateTexture('bug', 8, 7);
+  gfx3.destroy();
 }
