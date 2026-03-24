@@ -11,8 +11,8 @@ export class SpawnSystem {
     this.spawnTimer = 0;
     this.elapsedSeconds = 0;
     this.baseSpawnRate = 1000; // ms between spawns
-    this.minSpawnDist = 200;
-    this.maxSpawnDist = 300;
+    this.minSpawnDist = 400;
+    this.maxSpawnDist = 600;
   }
 
   update(time, delta) {

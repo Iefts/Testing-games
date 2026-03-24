@@ -7,11 +7,11 @@ export const UPGRADES = {
     maxLevel: 5,
     weaponClass: 'DamageAura',
     statsPerLevel: [
-      { radius: 60, damage: 2, tickRate: 500 },
-      { radius: 75, damage: 3, tickRate: 450 },
-      { radius: 90, damage: 4, tickRate: 400 },
-      { radius: 105, damage: 5, tickRate: 350 },
-      { radius: 120, damage: 7, tickRate: 300 },
+      { radius: 120, damage: 2, tickRate: 500 },
+      { radius: 150, damage: 3, tickRate: 450 },
+      { radius: 180, damage: 4, tickRate: 400 },
+      { radius: 210, damage: 5, tickRate: 350 },
+      { radius: 240, damage: 7, tickRate: 300 },
     ],
   },
   unicornRider: {

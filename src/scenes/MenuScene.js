@@ -9,21 +9,21 @@ export class MenuScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#1a1a2e');
 
     // Title
-    this.add.text(240, 80, 'ROGUELIKE\nSURVIVOR', {
-      fontSize: '24px',
+    this.add.text(480, 160, 'ROGUELIKE\nSURVIVOR', {
+      fontSize: '48px',
       color: '#ffffff',
       fontStyle: 'bold',
       align: 'center',
-      lineSpacing: 4,
+      lineSpacing: 8,
     }).setOrigin(0.5);
 
     // Start button
-    const startBtn = this.add.text(240, 180, 'START', {
-      fontSize: '16px',
+    const startBtn = this.add.text(480, 360, 'START', {
+      fontSize: '32px',
       color: '#44cc44',
       fontStyle: 'bold',
       backgroundColor: '#333355',
-      padding: { x: 20, y: 8 },
+      padding: { x: 40, y: 16 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     startBtn.on('pointerover', () => {
@@ -38,7 +38,6 @@ export class MenuScene extends Phaser.Scene {
       this.scene.start('CharacterSelect');
     });
 
-    // Also allow Enter key
     this.input.keyboard.on('keydown-ENTER', () => {
       this.scene.start('CharacterSelect');
     });

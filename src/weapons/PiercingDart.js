@@ -8,7 +8,7 @@ export class PiercingDart {
     this.fireRate = stats.fireRate;
     this.speed = stats.speed;
     this.lastFired = 0;
-    this.range = 250;
+    this.range = 500;
 
     this.darts = scene.physics.add.group({
       maxSize: 20,

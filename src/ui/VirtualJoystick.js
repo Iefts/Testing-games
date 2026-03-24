@@ -5,29 +5,25 @@ export class VirtualJoystick {
     this.scene = scene;
     this.active = false;
     this.vector = { x: 0, y: 0 };
-    this.maxRadius = 30;
+    this.maxRadius = 60;
 
-    // Only create on touch devices
     this.enabled = !scene.sys.game.device.os.desktop;
 
     if (!this.enabled) return;
 
-    // Create joystick graphics (hidden initially)
     this.base = scene.add.circle(0, 0, this.maxRadius, 0xffffff, 0.2)
       .setScrollFactor(0)
       .setDepth(150)
       .setVisible(false);
 
-    this.thumb = scene.add.circle(0, 0, 12, 0xffffff, 0.5)
+    this.thumb = scene.add.circle(0, 0, 24, 0xffffff, 0.5)
       .setScrollFactor(0)
       .setDepth(151)
       .setVisible(false);
 
-    // Track the joystick pointer separately
     this.pointerId = null;
 
     scene.input.on('pointerdown', (pointer) => {
-      // Only use left 40% of screen for joystick
       if (pointer.x > scene.scale.width * 0.4) return;
       if (this.pointerId !== null) return;
 

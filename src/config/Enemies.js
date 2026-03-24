@@ -4,7 +4,7 @@ export const ENEMIES = {
     name: 'Green Slime',
     sprite: 'slime',
     baseHp: 10,
-    speed: 40,
+    speed: 70,
     damage: 10,
     xpValue: 5,
     colliderRadius: 8,

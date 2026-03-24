@@ -47,7 +47,7 @@ export class InputManager {
       const dy = worldPoint.y - playerY;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist > 8) {
+      if (dist > 16) {
         x = dx / dist;
         y = dy / dist;
       }

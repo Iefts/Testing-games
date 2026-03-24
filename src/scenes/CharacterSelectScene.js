@@ -9,61 +9,48 @@ export class CharacterSelectScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor('#1a1a2e');
 
-    // Title
-    this.add.text(240, 30, 'SELECT CHARACTER', {
-      fontSize: '14px',
+    this.add.text(480, 60, 'SELECT CHARACTER', {
+      fontSize: '28px',
       color: '#ffffff',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // Character card for "Human"
     const human = CHARACTERS.human;
-    const cardX = 240;
-    const cardY = 130;
+    const cardX = 480;
+    const cardY = 260;
 
-    // Card background
-    const card = this.add.rectangle(cardX, cardY, 140, 140, 0x222244, 0.9)
-      .setStrokeStyle(2, 0x6666aa)
+    const card = this.add.rectangle(cardX, cardY, 280, 280, 0x222244, 0.9)
+      .setStrokeStyle(3, 0x6666aa)
       .setInteractive({ useHandCursor: true });
 
-    // Character sprite
-    this.add.sprite(cardX, cardY - 30, human.sprite).setScale(3);
+    this.add.sprite(cardX, cardY - 60, human.sprite).setScale(6);
 
-    // Name
-    this.add.text(cardX, cardY + 15, human.name, {
-      fontSize: '12px',
+    this.add.text(cardX, cardY + 30, human.name, {
+      fontSize: '24px',
       color: '#ffffff',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // Stats
-    this.add.text(cardX, cardY + 35, `HP: ${human.hp}  SPD: ${human.speed}`, {
-      fontSize: '8px',
+    this.add.text(cardX, cardY + 65, `HP: ${human.hp}  SPD: ${human.speed}`, {
+      fontSize: '16px',
       color: '#aaaacc',
     }).setOrigin(0.5);
 
-    this.add.text(cardX, cardY + 48, `Weapon: Revolver`, {
-      fontSize: '7px',
+    this.add.text(cardX, cardY + 90, `Weapon: Revolver`, {
+      fontSize: '14px',
       color: '#aaaacc',
     }).setOrigin(0.5);
 
-    // Hover
-    card.on('pointerover', () => {
-      card.setStrokeStyle(2, 0xaaaaff);
-    });
-    card.on('pointerout', () => {
-      card.setStrokeStyle(2, 0x6666aa);
-    });
+    card.on('pointerover', () => card.setStrokeStyle(3, 0xaaaaff));
+    card.on('pointerout', () => card.setStrokeStyle(3, 0x6666aa));
 
-    // Select
     card.on('pointerdown', () => {
       this.registry.set('character', 'human');
       this.scene.start('LevelSelect');
     });
 
-    // Hint
-    this.add.text(240, 240, 'Click to select', {
-      fontSize: '8px',
+    this.add.text(480, 480, 'Click to select', {
+      fontSize: '16px',
       color: '#666688',
     }).setOrigin(0.5);
   }

@@ -6,7 +6,7 @@ export class Revolver extends Weapon {
       fireRate: 600,
       damage: 5,
       bulletSpeed: 300,
-      range: 150,
+      range: 300,
       bulletKey: 'bullet',
       maxBullets: 30,
     });

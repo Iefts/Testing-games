@@ -244,7 +244,7 @@ export class GameScene extends Phaser.Scene {
 
       // Don't spawn trees too close to player start
       const dist = Phaser.Math.Distance.Between(x, y, playerX, playerY);
-      if (dist < 80) continue;
+      if (dist < 160) continue;
 
       const tree = this.trees.create(x, y, 'tree');
       tree.body.setSize(8, 6);

@@ -7,17 +7,14 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // Show loading text
-    const text = this.add.text(240, 135, 'Loading...', {
-      fontSize: '16px',
+    const text = this.add.text(480, 270, 'Loading...', {
+      fontSize: '32px',
       color: '#ffffff',
     }).setOrigin(0.5);
   }
 
   create() {
-    // Generate all pixel art textures at runtime
     generateSprites(this);
-
     this.scene.start('Menu');
   }
 }

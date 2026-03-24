@@ -7,38 +7,36 @@ export class LevelUpScene extends Phaser.Scene {
   }
 
   init(data) {
-    this.upgrades = data.upgrades; // Array of upgrade options
-    this.onSelect = data.onSelect; // Callback
+    this.upgrades = data.upgrades;
+    this.onSelect = data.onSelect;
   }
 
   create() {
     // Dim overlay
-    this.add.rectangle(240, 135, 480, 270, 0x000000, 0.6)
+    this.add.rectangle(480, 270, 960, 540, 0x000000, 0.6)
       .setDepth(190);
 
-    // Title
-    this.add.text(240, 30, 'LEVEL UP!', {
-      fontSize: '16px',
+    this.add.text(480, 60, 'LEVEL UP!', {
+      fontSize: '32px',
       color: '#ffdd44',
       fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(200);
 
-    this.add.text(240, 48, 'Choose an upgrade', {
-      fontSize: '8px',
+    this.add.text(480, 100, 'Choose an upgrade', {
+      fontSize: '16px',
       color: '#cccccc',
     }).setOrigin(0.5).setDepth(200);
 
-    // Create upgrade cards
     this.cards = [];
     const count = this.upgrades.length;
-    const spacing = 140;
-    const startX = 240 - (count - 1) * spacing / 2;
+    const spacing = 280;
+    const startX = 480 - (count - 1) * spacing / 2;
 
     this.upgrades.forEach((upgrade, i) => {
       const card = new UpgradeCard(
         this,
         startX + i * spacing,
-        145,
+        290,
         upgrade,
         (selected) => this.selectUpgrade(selected)
       );
