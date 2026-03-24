@@ -1,0 +1,47 @@
+export const UPGRADES = {
+  damageAura: {
+    id: 'damageAura',
+    name: 'Damage Aura',
+    description: 'Damages nearby enemies',
+    icon: 'aura',
+    maxLevel: 5,
+    weaponClass: 'DamageAura',
+    statsPerLevel: [
+      { radius: 60, damage: 2, tickRate: 500 },
+      { radius: 75, damage: 3, tickRate: 450 },
+      { radius: 90, damage: 4, tickRate: 400 },
+      { radius: 105, damage: 5, tickRate: 350 },
+      { radius: 120, damage: 7, tickRate: 300 },
+    ],
+  },
+  unicornRider: {
+    id: 'unicornRider',
+    name: 'Unicorn Rider',
+    description: 'A man on a unicorn charges across the screen',
+    icon: 'unicorn',
+    maxLevel: 5,
+    weaponClass: 'UnicornRider',
+    statsPerLevel: [
+      { damage: 50, cooldown: 8000, speed: 300 },
+      { damage: 65, cooldown: 7000, speed: 325 },
+      { damage: 80, cooldown: 6000, speed: 350 },
+      { damage: 100, cooldown: 5000, speed: 375 },
+      { damage: 130, cooldown: 4000, speed: 400 },
+    ],
+  },
+  piercingDart: {
+    id: 'piercingDart',
+    name: 'Piercing Dart',
+    description: 'Auto-aiming dart that pierces enemies',
+    icon: 'dart',
+    maxLevel: 5,
+    weaponClass: 'PiercingDart',
+    statsPerLevel: [
+      { damage: 5, fireRate: 1500, speed: 250 },
+      { damage: 7, fireRate: 1300, speed: 275 },
+      { damage: 9, fireRate: 1100, speed: 300 },
+      { damage: 12, fireRate: 900, speed: 325 },
+      { damage: 16, fireRate: 700, speed: 350 },
+    ],
+  },
+};
