@@ -31,34 +31,31 @@ export class SpearRain {
     const cam = this.scene.cameras.main;
     const targets = [];
 
-    // Pick on-screen enemies as targets
+    // Collect all on-screen enemies
     enemies.getChildren().forEach((enemy) => {
       if (!enemy.active) return;
       const sx = (enemy.x - cam.worldView.x) * cam.zoom;
       const sy = (enemy.y - cam.worldView.y) * cam.zoom;
       if (sx >= 0 && sx <= cam.width && sy >= 0 && sy <= cam.height) {
-        targets.push({ x: enemy.x, y: enemy.y });
+        targets.push(enemy);
       }
     });
 
-    // Shuffle targets
+    // Only fire if there are enemies on screen
+    if (targets.length === 0) return;
+
     Phaser.Utils.Array.Shuffle(targets);
 
     this.scene.sound.play('sfx_spearRain', { volume: 0.35 });
 
     for (let i = 0; i < this.spearCount; i++) {
-      let targetX;
-      if (i < targets.length) {
-        // Aim at an enemy with slight random offset
-        targetX = targets[i].x + Phaser.Math.Between(-15, 15);
-      } else {
-        // Random position on screen
-        targetX = cam.worldView.x + Phaser.Math.Between(20, cam.worldView.width - 20);
-      }
+      // Cycle through targets so every spear hits an enemy
+      const target = targets[i % targets.length];
 
-      // Stagger spawn timing slightly
       this.scene.time.delayedCall(i * 100, () => {
-        this.spawnSpear(targetX, cam);
+        if (target.active) {
+          this.spawnSpear(target.x, cam);
+        }
       });
     }
   }
