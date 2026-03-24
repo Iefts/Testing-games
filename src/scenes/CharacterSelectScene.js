@@ -45,6 +45,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     card.on('pointerout', () => card.setStrokeStyle(3, 0x6666aa));
 
     card.on('pointerdown', () => {
+      this.sound.play('sfx_buttonClick', { volume: 0.4 });
       this.registry.set('character', 'human');
       this.scene.start('LevelSelect');
     });

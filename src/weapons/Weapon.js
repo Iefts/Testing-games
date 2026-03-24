@@ -69,6 +69,9 @@ export class Weapon {
 
     bullet.damage = this.damage;
 
+    // Shoot sound
+    this.scene.sound.play('sfx_shoot', { volume: 0.3 });
+
     // Auto-destroy when out of range
     this.scene.time.delayedCall(2000, () => {
       if (bullet.active) {

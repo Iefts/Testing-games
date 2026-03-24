@@ -35,6 +35,7 @@ export class MenuScene extends Phaser.Scene {
       startBtn.setBackgroundColor('#333355');
     });
     startBtn.on('pointerdown', () => {
+      this.sound.play('sfx_buttonClick', { volume: 0.4 });
       this.scene.start('CharacterSelect');
     });
 

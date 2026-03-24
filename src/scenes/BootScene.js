@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { generateSprites } from '../utils/SpriteGenerator.js';
+import { generateSounds } from '../utils/SoundGenerator.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -42,6 +43,9 @@ export class BootScene extends Phaser.Scene {
       frameRate: 8,
       repeat: -1,
     });
+
+    // Generate sounds
+    generateSounds(this);
 
     this.scene.start('Menu');
   }

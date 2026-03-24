@@ -76,10 +76,13 @@ export class XPSystem {
     gem.setVisible(false);
     gem.body.enable = false;
 
+    this.scene.sound.play('sfx_xpPickup', { volume: 0.2 });
+
     // Check for level up
     if (this.xp >= this.xpToNextLevel) {
       this.xp -= this.xpToNextLevel;
       this.level++;
+      this.scene.sound.play('sfx_levelUp', { volume: 0.4 });
       this.scene.events.emit('levelUp', this.level);
     }
   }

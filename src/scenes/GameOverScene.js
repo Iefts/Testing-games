@@ -13,6 +13,8 @@ export class GameOverScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor('#1a1a2e');
 
+    this.sound.play(this.victory ? 'sfx_victory' : 'sfx_gameOver', { volume: 0.5 });
+
     const title = this.victory ? 'VICTORY!' : 'GAME OVER';
     const titleColor = this.victory ? '#44cc44' : '#ff4444';
     this.add.text(480, 100, title, {

@@ -147,17 +147,19 @@ export class GameScene extends Phaser.Scene {
     bullet.body.enable = false;
 
     enemy.takeDamage(bullet.damage);
+    this.sound.play('sfx_hit', { volume: 0.2 });
   }
 
   onEnemyHitPlayer(player, enemy) {
     if (!enemy.active) return;
     player.takeDamage(enemy.damage);
-    // Screen shake on hit
+    this.sound.play('sfx_playerHit', { volume: 0.4 });
     this.cameras.main.shake(100, 0.005);
   }
 
   onEnemyKilled(enemy) {
     this.killCount++;
+    this.sound.play('sfx_enemyDeath', { volume: 0.25 });
     // Death particle effect
     const particles = this.add.particles(enemy.x, enemy.y, 'bullet', {
       speed: { min: 30, max: 80 },

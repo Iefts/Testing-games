@@ -61,6 +61,8 @@ export class PiercingDart {
     dart.hitEnemies = new Set();
     dart.damage = this.damage;
 
+    this.scene.sound.play('sfx_dartFire', { volume: 0.25 });
+
     const angle = Phaser.Math.Angle.Between(
       this.player.x, this.player.y,
       target.x, target.y

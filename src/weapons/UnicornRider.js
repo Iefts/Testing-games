@@ -24,6 +24,7 @@ export class UnicornRider {
   }
 
   charge(enemies) {
+    this.scene.sound.play('sfx_unicornCharge', { volume: 0.4 });
     const cam = this.scene.cameras.main;
     const y = this.player.y;
 

@@ -40,6 +40,7 @@ export class DamageAura {
     this.lastTick = time;
 
     // Damage enemies in range
+    let hitAny = false;
     enemies.getChildren().forEach((enemy) => {
       if (!enemy.active) return;
       const dist = Phaser.Math.Distance.Between(
@@ -48,7 +49,11 @@ export class DamageAura {
       );
       if (dist <= this.radius) {
         enemy.takeDamage(this.damage);
+        hitAny = true;
       }
     });
+    if (hitAny) {
+      this.scene.sound.play('sfx_auraPulse', { volume: 0.15 });
+    }
   }
 }

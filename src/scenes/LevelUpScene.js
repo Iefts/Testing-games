@@ -45,6 +45,7 @@ export class LevelUpScene extends Phaser.Scene {
   }
 
   selectUpgrade(upgrade) {
+    this.sound.play('sfx_upgradeSelect', { volume: 0.4 });
     this.cards.forEach((card) => card.destroy());
     this.onSelect(upgrade);
     this.scene.stop();
