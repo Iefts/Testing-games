@@ -188,17 +188,28 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  getStats() {
+    const elapsed = this.timerSystem.elapsedSeconds;
+    const mins = Math.floor(elapsed / 60);
+    const secs = Math.floor(elapsed % 60);
+    return {
+      time: `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      kills: this.killCount,
+      level: this.xpSystem.level,
+    };
+  }
+
   onPlayerDeath() {
     this.gameOver = true;
     this.time.delayedCall(1000, () => {
-      this.scene.restart();
+      this.scene.start('GameOver', { victory: false, stats: this.getStats() });
     });
   }
 
   onVictory() {
     this.gameOver = true;
     this.time.delayedCall(1000, () => {
-      this.scene.restart();
+      this.scene.start('GameOver', { victory: true, stats: this.getStats() });
     });
   }
 }

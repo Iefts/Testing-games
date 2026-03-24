@@ -18,6 +18,6 @@ export class BootScene extends Phaser.Scene {
     // Generate all pixel art textures at runtime
     generateSprites(this);
 
-    this.scene.start('Game');
+    this.scene.start('Menu');
   }
 }
