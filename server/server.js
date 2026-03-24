@@ -4,7 +4,7 @@ import { createRoom, createPlayer, initWorld, tick, buildStateSnapshot, applyUpg
 
 const PORT = 3000;
 const TICK_RATE = 60;
-const BROADCAST_RATE = 20;
+const BROADCAST_RATE = 60;
 const TICK_MS = 1000 / TICK_RATE;
 const BROADCAST_MS = 1000 / BROADCAST_RATE;
 const MAX_PLAYERS = 2;
@@ -133,6 +133,18 @@ function handleMessage(ws, msg) {
       }
       break;
     }
+
+    case 'emote': {
+      const emoteId = msg.emoteId;
+      if (typeof emoteId === 'number' && emoteId >= 0 && emoteId <= 5) {
+        broadcast(JSON.stringify({
+          type: 'emote',
+          playerId: client.id,
+          emoteId,
+        }));
+      }
+      break;
+    }
   }
 }
 
@@ -199,11 +211,17 @@ function startGame() {
       return;
     }
 
+    // Send gameplay events immediately (damage, weapon fired, deaths)
+    const gameplayEvents = room.events.filter((e) =>
+      e.type !== 'levelUp' && e.type !== 'gameOver'
+    );
+    if (gameplayEvents.length > 0) {
+      broadcast(JSON.stringify({ type: 'events', ev: gameplayEvents }));
+    }
+
     // Broadcast state at BROADCAST_RATE
     if (now - lastBroadcast >= BROADCAST_MS) {
       const snapshot = buildStateSnapshot(room);
-      // Filter out levelUp events (sent individually above)
-      snapshot.ev = room.events.filter((e) => e.type !== 'levelUp');
       broadcast(JSON.stringify(snapshot));
       lastBroadcast = now;
     }

@@ -71,9 +71,16 @@ export class NetworkManager {
 
       case 'state':
         this.latestState = msg;
+        break;
+
+      case 'events':
         if (msg.ev) {
           this.eventQueue.push(...msg.ev);
         }
+        break;
+
+      case 'emote':
+        this.eventQueue.push(msg);
         break;
 
       case 'levelUp':

@@ -34,8 +34,8 @@ export class RemotePlayer extends Phaser.GameObjects.Sprite {
     this.isAlive = data.alive;
 
     // Interpolate position
-    this.x = Phaser.Math.Linear(this.x, this.targetX, 0.3);
-    this.y = Phaser.Math.Linear(this.y, this.targetY, 0.3);
+    this.x = Phaser.Math.Linear(this.x, this.targetX, 0.5);
+    this.y = Phaser.Math.Linear(this.y, this.targetY, 0.5);
 
     this.setFlipX(data.flipX);
     this.setVisible(data.alive);

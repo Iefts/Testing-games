@@ -56,11 +56,10 @@ export function updateWeapon(player, weapon, now, room) {
       if (!target) return;
       weapon.lastFired = now;
       const angle = angleBetween(player.x, player.y, target.x, target.y);
-      const thrustRange = weapon.range * 0.3;
       for (const [eid, enemy] of room.enemies) {
         if (!enemy.alive) continue;
         const dist = distance(player.x, player.y, enemy.x, enemy.y);
-        if (dist <= thrustRange + 12) {
+        if (dist <= weapon.range) {
           const eAngle = angleBetween(player.x, player.y, enemy.x, enemy.y);
           const diff = Math.abs(((angle - eAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
           if (diff < Math.PI / 3) {

@@ -7,6 +7,15 @@ import { InputManager } from '../systems/InputManager.js';
 import { RemotePlayer } from '../entities/RemotePlayer.js';
 import { DamageNumbers, DAMAGE_COLORS } from '../ui/DamageNumbers.js';
 
+const EMOTES = [
+  { label: '\u{1F600}', type: 'emoji' },     // 😀
+  { label: '\u{1F44D}', type: 'emoji' },     // 👍
+  { label: '\u{1F480}', type: 'emoji' },     // 💀
+  { label: 'Help!', type: 'chat' },
+  { label: 'Nice!', type: 'chat' },
+  { label: "Let's go!", type: 'chat' },
+];
+
 export class MultiplayerGameScene extends Phaser.Scene {
   constructor() {
     super('MultiplayerGame');
@@ -17,6 +26,11 @@ export class MultiplayerGameScene extends Phaser.Scene {
     const startData = this.registry.get('gameStartData');
 
     this.gameOver = false;
+
+    // Store local character config for prediction
+    const myData = startData.players.find((p) => p.id === this.network.myId);
+    this.myCharConfig = CHARACTERS[myData?.characterId || 'human'];
+    this.localSpeed = this.myCharConfig.speed;
 
     // World
     this.physics.world.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -46,40 +60,30 @@ export class MultiplayerGameScene extends Phaser.Scene {
     this.inputManager = new InputManager(this);
 
     // Create local player sprite
-    const myData = startData.players.find((p) => p.id === this.network.myId);
-    const myChar = CHARACTERS[myData?.characterId || 'human'];
     this.localPlayer = this.add.sprite(
       myData?.x || MAP_WIDTH / 2,
       myData?.y || MAP_HEIGHT / 2,
-      myChar.spriteSheet, 0
+      this.myCharConfig.spriteSheet, 0
     ).setDepth(10);
-    this.localAnimPrefix = myChar.animPrefix;
+    this.localAnimPrefix = this.myCharConfig.animPrefix;
 
     // Local player health bar
     this.localHealthBg = this.add.rectangle(0, 0, 16, 2, 0x000000).setDepth(11);
     this.localHealthFill = this.add.rectangle(0, 0, 16, 2, 0x44cc44).setDepth(12);
 
-    // Remote player
-    this.remotePlayer = null;
+    // Remote players
     this.remotePlayers = new Map();
 
-    // Enemy sprite pool
+    // Sprite pools
     this.enemySprites = new Map();
-
-    // Projectile sprite pool
     this.projSprites = new Map();
-
-    // XP gem sprite pool
     this.gemSprites = new Map();
-
-    // Health potion sprites
     this.potionSprites = new Map();
-
-    // Flame sprites
     this.flameSprites = new Map();
-
-    // Tornado sprites
     this.tornadoSprites = new Map();
+
+    // Active emote bubbles
+    this.emoteBubbles = new Map();
 
     // Damage numbers
     this.damageNumbers = new DamageNumbers(this);
@@ -89,20 +93,23 @@ export class MultiplayerGameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.localPlayer, true, 0.1, 0.1);
     this.cameras.main.setZoom(2);
 
-    // HUD (simplified for multiplayer)
+    // HUD
     this.createHUD();
-
-    // Upgrade icons
     this.upgradeSlots = [];
+
+    // Emote wheel
+    this.emoteWheelOpen = false;
+    this.emoteElements = [];
+    this.createEmoteButton();
 
     // Network callbacks
     this.network.onLevelUp = (msg) => this.onNetworkLevelUp(msg);
     this.network.onGameOver = (msg) => this.onNetworkGameOver(msg);
     this.network.onUpgradeApplied = (msg) => this.onNetworkUpgradeApplied(msg);
 
-    // Pause on Escape
+    // ESC closes emote wheel
     this.input.keyboard.on('keydown-ESC', () => {
-      // In multiplayer, ESC could show a menu but doesn't pause
+      if (this.emoteWheelOpen) this.closeEmoteWheel();
     });
   }
 
@@ -134,7 +141,7 @@ export class MultiplayerGameScene extends Phaser.Scene {
       fontSize: '16px', color: '#ffffff',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(101);
 
-    // Partner health bar (top right area)
+    // Partner health bar
     this.hudPartnerBg = this.add.rectangle(800, 8, 100, 12, 0x333333)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(100).setVisible(false);
     this.hudPartnerBar = this.add.rectangle(802, 10, 96, 8, 0x44cc44)
@@ -143,40 +150,206 @@ export class MultiplayerGameScene extends Phaser.Scene {
       fontSize: '10px', color: '#aaaaaa',
     }).setScrollFactor(0).setDepth(101).setVisible(false);
 
-    // Respawn text (hidden)
+    // Respawn text
     this.respawnText = this.add.text(480, 270, '', {
       fontSize: '24px', color: '#ff4444', fontStyle: 'bold',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setVisible(false);
   }
 
+  // ---- EMOTE SYSTEM ----
+
+  createEmoteButton() {
+    this.emoteBtn = this.add.text(920, 510, '\u{1F600}', {
+      fontSize: '24px',
+      backgroundColor: '#333355',
+      padding: { x: 6, y: 4 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(150)
+      .setInteractive({ useHandCursor: true });
+
+    this.emoteBtn.on('pointerdown', () => {
+      if (this.emoteWheelOpen) {
+        this.closeEmoteWheel();
+      } else {
+        this.openEmoteWheel();
+      }
+    });
+  }
+
+  openEmoteWheel() {
+    this.emoteWheelOpen = true;
+    const cx = 920;
+    const cy = 460;
+    const radius = 50;
+
+    // Background circle
+    const bg = this.add.circle(cx, cy, radius + 10, 0x000000, 0.7)
+      .setScrollFactor(0).setDepth(151);
+    this.emoteElements.push(bg);
+
+    // 6 slices arranged in a circle
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+      const sx = cx + Math.cos(angle) * radius * 0.65;
+      const sy = cy + Math.sin(angle) * radius * 0.65;
+
+      const emote = EMOTES[i];
+      const isEmoji = emote.type === 'emoji';
+
+      const sliceBg = this.add.circle(sx, sy, 18, 0x333366, 0.9)
+        .setScrollFactor(0).setDepth(152)
+        .setInteractive({ useHandCursor: true });
+
+      const label = this.add.text(sx, sy, emote.label, {
+        fontSize: isEmoji ? '16px' : '9px',
+        color: '#ffffff',
+        fontStyle: isEmoji ? '' : 'bold',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(153);
+
+      sliceBg.on('pointerover', () => sliceBg.setFillStyle(0x5555aa, 1));
+      sliceBg.on('pointerout', () => sliceBg.setFillStyle(0x333366, 0.9));
+      sliceBg.on('pointerdown', () => {
+        this.network.send({ type: 'emote', emoteId: i });
+        this.closeEmoteWheel();
+      });
+
+      this.emoteElements.push(sliceBg, label);
+    }
+
+    // Click outside to close
+    this.emoteClickOutside = this.input.on('pointerdown', (pointer) => {
+      const dx = pointer.x - cx;
+      const dy = pointer.y - cy;
+      if (Math.sqrt(dx * dx + dy * dy) > radius + 20) {
+        this.closeEmoteWheel();
+      }
+    });
+  }
+
+  closeEmoteWheel() {
+    this.emoteWheelOpen = false;
+    this.emoteElements.forEach((el) => el.destroy());
+    this.emoteElements = [];
+  }
+
+  showEmoteBubble(playerId, emoteId) {
+    const emote = EMOTES[emoteId];
+    if (!emote) return;
+
+    // Remove existing bubble for this player
+    const existing = this.emoteBubbles.get(playerId);
+    if (existing) {
+      existing.bg.destroy();
+      existing.text.destroy();
+      if (existing.timer) existing.timer.remove();
+    }
+
+    // Find player position
+    let targetSprite;
+    if (playerId === this.network.myId) {
+      targetSprite = this.localPlayer;
+    } else {
+      targetSprite = this.remotePlayers.get(playerId);
+    }
+    if (!targetSprite) return;
+
+    const isEmoji = emote.type === 'emoji';
+    const fontSize = isEmoji ? '16px' : '10px';
+
+    const bubbleBg = this.add.rectangle(0, 0,
+      isEmoji ? 24 : emote.label.length * 7 + 12, isEmoji ? 24 : 16,
+      0x222244, 0.85
+    ).setDepth(50).setStrokeStyle(1, 0x6666aa);
+
+    const bubbleText = this.add.text(0, 0, emote.label, {
+      fontSize,
+      color: '#ffffff',
+      fontStyle: isEmoji ? '' : 'bold',
+    }).setOrigin(0.5).setDepth(51);
+
+    const bubble = { bg: bubbleBg, text: bubbleText, targetSprite, timer: null };
+    this.emoteBubbles.set(playerId, bubble);
+
+    // Fade out after 2 seconds
+    bubble.timer = this.time.delayedCall(2000, () => {
+      this.tweens.add({
+        targets: [bubbleBg, bubbleText],
+        alpha: 0,
+        duration: 300,
+        onComplete: () => {
+          bubbleBg.destroy();
+          bubbleText.destroy();
+          if (this.emoteBubbles.get(playerId) === bubble) {
+            this.emoteBubbles.delete(playerId);
+          }
+        },
+      });
+    });
+  }
+
+  updateEmoteBubbles() {
+    for (const [playerId, bubble] of this.emoteBubbles) {
+      if (bubble.targetSprite && bubble.targetSprite.active !== false) {
+        const x = bubble.targetSprite.x;
+        const y = bubble.targetSprite.y - 20;
+        bubble.bg.setPosition(x, y);
+        bubble.text.setPosition(x, y);
+      }
+    }
+  }
+
+  // ---- UPDATE LOOP ----
+
   update(time, delta) {
     if (this.gameOver) return;
 
-    // Send input
+    // Collect input
     const movement = this.inputManager.getMovementVector(
       this.localPlayer.x, this.localPlayer.y
     );
     this.network.sendInput(movement.x, movement.y);
 
+    // Client-side prediction: move local player immediately
+    this.localPlayer.x += movement.x * this.localSpeed * (delta / 1000);
+    this.localPlayer.y += movement.y * this.localSpeed * (delta / 1000);
+    // Clamp to world bounds
+    this.localPlayer.x = Phaser.Math.Clamp(this.localPlayer.x, 16, MAP_WIDTH - 16);
+    this.localPlayer.y = Phaser.Math.Clamp(this.localPlayer.y, 16, MAP_HEIGHT - 16);
+
+    // Local animation from input
+    const moving = Math.abs(movement.x) > 0.1 || Math.abs(movement.y) > 0.1;
+    const animKey = moving
+      ? `${this.localAnimPrefix}_walk`
+      : `${this.localAnimPrefix}_idle`;
+    if (this.localPlayer.anims.currentAnim?.key !== animKey) {
+      this.localPlayer.play(animKey);
+    }
+    if (movement.x < -0.1) this.localPlayer.setFlipX(true);
+    else if (movement.x > 0.1) this.localPlayer.setFlipX(false);
+
     // Apply server state
     const state = this.network.latestState;
-    if (!state) return;
-
-    this.syncPlayers(state.p);
-    this.syncEnemies(state.e);
-    this.syncProjectiles(state.pr);
-    this.syncGems(state.g);
-    this.syncPotions(state.h);
-    this.syncFlames(state.fl);
-    this.syncTornados(state.tn);
-    this.syncPots(state.pt);
+    if (state) {
+      this.syncPlayers(state.p);
+      this.syncEnemies(state.e);
+      this.syncProjectiles(state.pr);
+      this.syncGems(state.g);
+      this.syncPotions(state.h);
+      this.syncFlames(state.fl);
+      this.syncTornados(state.tn);
+      this.syncPots(state.pt);
+      this.updateHUD(state);
+    }
 
     // Process events
     const events = this.network.drainEvents();
     this.processEvents(events);
 
-    // Update HUD
-    this.updateHUD(state);
+    // Update health bar position
+    this.localHealthBg.setPosition(this.localPlayer.x, this.localPlayer.y - 12);
+    this.localHealthFill.setPosition(this.localPlayer.x, this.localPlayer.y - 12);
+
+    // Update emote bubbles
+    this.updateEmoteBubbles();
   }
 
   syncPlayers(players) {
@@ -184,29 +357,18 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
     for (const p of players) {
       if (p.id === this.network.myId) {
-        // Local player — interpolate toward server position
-        this.localPlayer.x = Phaser.Math.Linear(this.localPlayer.x, p.x, 0.3);
-        this.localPlayer.y = Phaser.Math.Linear(this.localPlayer.y, p.y, 0.3);
-        this.localPlayer.setFlipX(p.flipX);
+        // Reconcile predicted position with server (gentle correction)
+        this.localPlayer.x = Phaser.Math.Linear(this.localPlayer.x, p.x, 0.15);
+        this.localPlayer.y = Phaser.Math.Linear(this.localPlayer.y, p.y, 0.15);
+
         this.localPlayer.setVisible(p.alive);
         this.localPlayer.setAlpha(p.inv ? 0.5 : 1);
 
-        const animKey = p.anim === 'walk'
-          ? `${this.localAnimPrefix}_walk`
-          : `${this.localAnimPrefix}_idle`;
-        if (this.localPlayer.anims.currentAnim?.key !== animKey) {
-          this.localPlayer.play(animKey);
-        }
-
-        // Local health bar follows player
-        this.localHealthBg.setPosition(this.localPlayer.x, this.localPlayer.y - 12);
-        this.localHealthFill.setPosition(this.localPlayer.x, this.localPlayer.y - 12);
         const hpPct = p.hp / p.mhp;
         this.localHealthFill.setSize(16 * hpPct, 2);
         this.localHealthBg.setVisible(p.alive);
         this.localHealthFill.setVisible(p.alive);
 
-        // Respawn timer
         if (!p.alive && p.rt > 0) {
           this.respawnText.setText(`Respawning in ${p.rt}s`);
           this.respawnText.setVisible(true);
@@ -214,7 +376,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
           this.respawnText.setVisible(false);
         }
       } else {
-        // Remote player
         let remote = this.remotePlayers.get(p.id);
         if (!remote) {
           remote = new RemotePlayer(this, p.x, p.y, p.ch);
@@ -240,12 +401,11 @@ export class MultiplayerGameScene extends Phaser.Scene {
         }
         this.enemySprites.set(id, sprite);
       }
-      sprite.x = Phaser.Math.Linear(sprite.x, x, 0.3);
-      sprite.y = Phaser.Math.Linear(sprite.y, y, 0.3);
+      sprite.x = Phaser.Math.Linear(sprite.x, x, 0.5);
+      sprite.y = Phaser.Math.Linear(sprite.y, y, 0.5);
       sprite.setVisible(true);
     }
 
-    // Remove stale enemies
     for (const [id, sprite] of this.enemySprites) {
       if (!activeIds.has(id)) {
         sprite.destroy();
@@ -291,8 +451,8 @@ export class MultiplayerGameScene extends Phaser.Scene {
         sprite = this.add.sprite(x, y, 'xpGem').setDepth(4);
         this.gemSprites.set(id, sprite);
       }
-      sprite.x = Phaser.Math.Linear(sprite.x, x, 0.4);
-      sprite.y = Phaser.Math.Linear(sprite.y, y, 0.4);
+      sprite.x = Phaser.Math.Linear(sprite.x, x, 0.6);
+      sprite.y = Phaser.Math.Linear(sprite.y, y, 0.6);
     }
 
     for (const [id, sprite] of this.gemSprites) {
@@ -305,7 +465,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
   syncPotions(potions) {
     if (!potions) return;
-
     const activeIds = new Set();
     for (const [id, x, y] of potions) {
       activeIds.add(id);
@@ -315,7 +474,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
         this.potionSprites.set(id, sprite);
       }
     }
-
     for (const [id, sprite] of this.potionSprites) {
       if (!activeIds.has(id)) {
         sprite.destroy();
@@ -326,7 +484,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
   syncFlames(flames) {
     if (!flames) return;
-
     const activeIds = new Set();
     for (const [id, x, y] of flames) {
       activeIds.add(id);
@@ -336,7 +493,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
         this.flameSprites.set(id, sprite);
       }
     }
-
     for (const [id, sprite] of this.flameSprites) {
       if (!activeIds.has(id)) {
         sprite.destroy();
@@ -347,7 +503,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
   syncTornados(tornados) {
     if (!tornados) return;
-
     const activeIds = new Set();
     for (const [id, x, y] of tornados) {
       activeIds.add(id);
@@ -356,10 +511,9 @@ export class MultiplayerGameScene extends Phaser.Scene {
         sprite = this.add.sprite(x, y, 'tornado').setDepth(15);
         this.tornadoSprites.set(id, sprite);
       }
-      sprite.x = Phaser.Math.Linear(sprite.x, x, 0.3);
-      sprite.y = Phaser.Math.Linear(sprite.y, y, 0.3);
+      sprite.x = Phaser.Math.Linear(sprite.x, x, 0.5);
+      sprite.y = Phaser.Math.Linear(sprite.y, y, 0.5);
     }
-
     for (const [id, sprite] of this.tornadoSprites) {
       if (!activeIds.has(id)) {
         sprite.destroy();
@@ -370,17 +524,15 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
   syncPots(pots) {
     if (!pots) return;
-
     const activeIds = new Set();
     for (const [id, x, y] of pots) {
       activeIds.add(id);
-      let sprite = this.potSprites.get(id);
+      const sprite = this.potSprites.get(id);
       if (sprite) {
         sprite.setPosition(x, y);
         sprite.setVisible(true);
       }
     }
-
     for (const [id, sprite] of this.potSprites) {
       if (!activeIds.has(id)) {
         sprite.setVisible(false);
@@ -393,7 +545,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
       switch (event.type) {
         case 'damage':
           if (this.damageNumbers) {
-            // Find enemy position
             const enemy = this.enemySprites.get(event.targetId);
             if (enemy) {
               this.damageNumbers.show(enemy.x, enemy.y, event.amount, event.color || '#ffffff');
@@ -402,7 +553,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
           break;
 
         case 'enemyDeath': {
-          // Death particles
           const particles = this.add.particles(event.x, event.y, 'bullet', {
             speed: { min: 30, max: 80 },
             scale: { start: 1.5, end: 0 },
@@ -438,15 +588,18 @@ export class MultiplayerGameScene extends Phaser.Scene {
           this.sound.play('sfx_healthPickup', { volume: 0.3 });
           break;
 
-        case 'weaponFired':
+        case 'weaponFired': {
           if (event.weaponType === 'revolver') {
             this.sound.play('sfx_shoot', { volume: 0.3 });
           } else if (event.weaponType === 'rapier') {
             this.sound.play('sfx_rapier', { volume: 0.25 });
+            // Show rapier thrust visual
+            this.showRapierThrust(event.playerId, event.angle);
           } else if (event.weaponType === 'piercingDart') {
             this.sound.play('sfx_dartFire', { volume: 0.25 });
           }
           break;
+        }
 
         case 'potBreak': {
           const particles = this.add.particles(event.x, event.y, 'bullet', {
@@ -487,12 +640,38 @@ export class MultiplayerGameScene extends Phaser.Scene {
         case 'gemCollected':
           this.sound.play('sfx_xpPickup', { volume: 0.2 });
           break;
+
+        case 'emote':
+          this.showEmoteBubble(event.playerId, event.emoteId);
+          break;
       }
     }
   }
 
+  showRapierThrust(playerId, angle) {
+    // Find the player sprite
+    let playerSprite;
+    if (playerId === this.network.myId) {
+      playerSprite = this.localPlayer;
+    } else {
+      playerSprite = this.remotePlayers.get(playerId);
+    }
+    if (!playerSprite) return;
+
+    const thrustDist = 14;
+    const tipX = playerSprite.x + Math.cos(angle) * thrustDist;
+    const tipY = playerSprite.y + Math.sin(angle) * thrustDist;
+
+    const rapierSprite = this.add.sprite(tipX, tipY, 'rapier')
+      .setRotation(angle)
+      .setDepth(50);
+
+    this.time.delayedCall(150, () => {
+      rapierSprite.destroy();
+    });
+  }
+
   updateHUD(state) {
-    // Find my player data
     const me = state.p?.find((p) => p.id === this.network.myId);
     const partner = state.p?.find((p) => p.id !== this.network.myId);
 
@@ -503,13 +682,11 @@ export class MultiplayerGameScene extends Phaser.Scene {
       else if (healthPct > 0.25) this.hudHealthBar.setFillStyle(0xffaa00);
       else this.hudHealthBar.setFillStyle(0xff3333);
 
-      // XP progress
       const xpNeeded = 10 * me.level * (me.level + 1) / 2;
       const xpProgress = xpNeeded > 0 ? me.xp / xpNeeded : 0;
       this.hudXpBar.setSize(156 * Math.min(1, xpProgress), 8);
       this.hudLevelText.setText(`Lv ${me.level}`);
 
-      // Update upgrade icons
       if (me.upgrades) {
         this.updateUpgradeIcons(me.upgrades);
       }
@@ -532,20 +709,16 @@ export class MultiplayerGameScene extends Phaser.Scene {
       }
     }
 
-    // Timer
     const remaining = state.tm || 0;
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
     this.hudTimerText.setText(
       `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     );
-
-    // Kill count
     this.hudKillText.setText(`Kills: ${state.k || 0}`);
   }
 
   updateUpgradeIcons(acquired) {
-    // Destroy old
     this.upgradeSlots.forEach((slot) => {
       slot.border.destroy();
       slot.icon.destroy();
@@ -581,8 +754,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
   onNetworkLevelUp(msg) {
     if (msg.playerId !== this.network.myId) return;
-
-    // Launch LevelUp overlay
     this.scene.launch('LevelUp', {
       upgrades: msg.choices,
       onSelect: (selected) => {
@@ -606,4 +777,3 @@ export class MultiplayerGameScene extends Phaser.Scene {
     });
   }
 }
-
