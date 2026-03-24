@@ -6,7 +6,7 @@ export class XPSystem {
     this.player = player;
     this.xp = 0;
     this.level = 1;
-    this.magnetRadius = 100;
+    this.magnetRadius = 30;
 
     // XP gem group
     this.gems = scene.physics.add.group();

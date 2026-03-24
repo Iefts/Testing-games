@@ -1,5 +1,6 @@
 export function generateSprites(scene) {
   generatePlayer(scene);
+  generateFencer(scene);
   generateSlime(scene);
   generateBullet(scene);
   generateXPGem(scene);
@@ -12,6 +13,9 @@ export function generateSprites(scene) {
   generateFlame(scene);
   generateTornado(scene);
   generateBugs(scene);
+  generatePot(scene);
+  generateHealthPotion(scene);
+  generateRapier(scene);
 }
 
 function generatePlayer(scene) {
@@ -827,4 +831,242 @@ function generateBugs(scene) {
   gfx3.fillRect(6, 4, 1, 1);
   gfx3.generateTexture('bug', 8, 7);
   gfx3.destroy();
+}
+
+function generateFencer(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 4-frame spritesheet (64x16): idle, walk1, walk2, walk3
+  // Fencer with mask, white fencing outfit, rapier
+
+  for (let frame = 0; frame < 4; frame++) {
+    const ox = frame * 16;
+    const legOffset = [0, -1, 0, 1][frame];
+
+    // === Dark outline ===
+    gfx.fillStyle(0x1a1a1a);
+    gfx.fillRect(ox + 4, 0, 8, 1);
+    gfx.fillRect(ox + 3, 1, 1, 5);
+    gfx.fillRect(ox + 12, 1, 1, 5);
+    gfx.fillRect(ox + 2, 6, 1, 6);
+    gfx.fillRect(ox + 13, 6, 1, 6);
+    gfx.fillRect(ox + 4, 11, 1, 5);
+    gfx.fillRect(ox + 11, 11, 1, 5);
+
+    // === Fencer mask (grey mesh with dark visor) ===
+    gfx.fillStyle(0xaaaaaa);
+    gfx.fillRect(ox + 4, 0, 8, 5);
+    // Mask highlight
+    gfx.fillStyle(0xcccccc);
+    gfx.fillRect(ox + 5, 0, 4, 2);
+    // Mesh pattern (dithered)
+    gfx.fillStyle(0x888888);
+    gfx.fillRect(ox + 5, 2, 1, 1);
+    gfx.fillRect(ox + 7, 2, 1, 1);
+    gfx.fillRect(ox + 9, 2, 1, 1);
+    gfx.fillRect(ox + 6, 3, 1, 1);
+    gfx.fillRect(ox + 8, 3, 1, 1);
+    // Visor slit
+    gfx.fillStyle(0x222222);
+    gfx.fillRect(ox + 5, 3, 5, 1);
+    // Mask brim
+    gfx.fillStyle(0x666666);
+    gfx.fillRect(ox + 4, 5, 8, 1);
+
+    // === White fencing jacket ===
+    gfx.fillStyle(0xeeeeee);
+    gfx.fillRect(ox + 4, 6, 8, 5);
+    // Jacket shadow
+    gfx.fillStyle(0xcccccc);
+    gfx.fillRect(ox + 4, 9, 8, 2);
+    gfx.fillRect(ox + 4, 6, 1, 5);
+    gfx.fillRect(ox + 11, 6, 1, 5);
+    // Jacket highlight
+    gfx.fillStyle(0xffffff);
+    gfx.fillRect(ox + 6, 6, 3, 3);
+    // Chest protector (plastron) - slightly off-white
+    gfx.fillStyle(0xdddddd);
+    gfx.fillRect(ox + 5, 7, 2, 3);
+    // Zipper line
+    gfx.fillStyle(0xaaaaaa);
+    gfx.fillRect(ox + 7, 6, 1, 4);
+
+    // === Arms (gloved) ===
+    gfx.fillStyle(0xeeeeee);
+    gfx.fillRect(ox + 2, 7, 2, 2);
+    gfx.fillRect(ox + 12, 7, 2, 2);
+    // Glove (white fencing glove)
+    gfx.fillStyle(0xdddddd);
+    gfx.fillRect(ox + 2, 9, 2, 2);
+    gfx.fillRect(ox + 12, 9, 2, 2);
+    // Glove cuff
+    gfx.fillStyle(0x888888);
+    gfx.fillRect(ox + 2, 9, 2, 1);
+    gfx.fillRect(ox + 12, 9, 2, 1);
+
+    // === Belt ===
+    gfx.fillStyle(0x444444);
+    gfx.fillRect(ox + 4, 10, 8, 1);
+    // Buckle
+    gfx.fillStyle(0xcccccc);
+    gfx.fillRect(ox + 7, 10, 2, 1);
+
+    // === Legs (white fencing breeches) ===
+    gfx.fillStyle(0xdddddd);
+    gfx.fillRect(ox + 5, 11, 2, 3 + legOffset);
+    gfx.fillRect(ox + 9, 11, 2, 3 - legOffset);
+    // Leg shadow
+    gfx.fillStyle(0xbbbbbb);
+    gfx.fillRect(ox + 6, 12, 1, 1);
+    gfx.fillRect(ox + 10, 12, 1, 1);
+
+    // === Fencing shoes (dark) ===
+    gfx.fillStyle(0x333333);
+    gfx.fillRect(ox + 4, 14 + legOffset, 3, 2 - Math.abs(legOffset));
+    gfx.fillRect(ox + 9, 14 - legOffset, 3, 2 - Math.abs(legOffset));
+    // Shoe highlight
+    gfx.fillStyle(0x444444);
+    gfx.fillRect(ox + 5, 14 + legOffset, 1, 1);
+    gfx.fillRect(ox + 10, 14 - legOffset, 1, 1);
+  }
+
+  gfx.generateTexture('fencer_sheet', 64, 16);
+  gfx.destroy();
+
+  scene.textures.get('fencer_sheet').add('__BASE', 0, 0, 0, 64, 16);
+
+  const rt = scene.make.renderTexture({ width: 16, height: 16, add: false });
+  const tempSprite = scene.add.sprite(0, 0, 'fencer_sheet').setOrigin(0, 0).setCrop(0, 0, 16, 16);
+  rt.draw(tempSprite, 0, 0);
+  rt.saveTexture('fencer');
+  tempSprite.destroy();
+}
+
+function generatePot(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 12x12 clay pot with outline
+
+  // Dark outline
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(3, 0, 6, 1);
+  gfx.fillRect(2, 1, 1, 2);
+  gfx.fillRect(9, 1, 1, 2);
+  gfx.fillRect(1, 3, 1, 7);
+  gfx.fillRect(10, 3, 1, 7);
+  gfx.fillRect(2, 10, 1, 1);
+  gfx.fillRect(9, 10, 1, 1);
+  gfx.fillRect(3, 11, 6, 1);
+
+  // Pot body (terracotta)
+  gfx.fillStyle(0xcc7744);
+  gfx.fillRect(2, 3, 8, 7);
+  gfx.fillRect(3, 10, 6, 1);
+
+  // Rim
+  gfx.fillStyle(0xbb6633);
+  gfx.fillRect(3, 0, 6, 1);
+  gfx.fillRect(2, 1, 8, 2);
+  // Rim highlight
+  gfx.fillStyle(0xdd8855);
+  gfx.fillRect(3, 0, 4, 1);
+  gfx.fillRect(3, 1, 5, 1);
+
+  // Body shading
+  gfx.fillStyle(0xaa5533);
+  gfx.fillRect(7, 4, 3, 5);
+  gfx.fillRect(8, 9, 1, 1);
+  // Body highlight
+  gfx.fillStyle(0xdd8855);
+  gfx.fillRect(3, 4, 2, 4);
+  gfx.fillStyle(0xee9966);
+  gfx.fillRect(3, 5, 1, 2);
+
+  // Decorative band
+  gfx.fillStyle(0x996633);
+  gfx.fillRect(2, 5, 8, 1);
+
+  gfx.generateTexture('pot', 12, 12);
+  gfx.destroy();
+}
+
+function generateHealthPotion(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 8x10 health potion bottle
+
+  // Dark outline
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(2, 0, 4, 1);
+  gfx.fillRect(3, 0, 2, 3);
+  gfx.fillRect(1, 3, 1, 6);
+  gfx.fillRect(6, 3, 1, 6);
+  gfx.fillRect(2, 9, 4, 1);
+
+  // Cork
+  gfx.fillStyle(0x8b6914);
+  gfx.fillRect(3, 0, 2, 2);
+  gfx.fillStyle(0xa07a1e);
+  gfx.fillRect(3, 0, 1, 1);
+
+  // Bottle neck
+  gfx.fillStyle(0xcc3333);
+  gfx.fillRect(3, 2, 2, 1);
+
+  // Bottle body (red liquid)
+  gfx.fillStyle(0xcc3333);
+  gfx.fillRect(2, 3, 4, 6);
+  // Liquid highlight
+  gfx.fillStyle(0xff4444);
+  gfx.fillRect(2, 4, 2, 3);
+  gfx.fillStyle(0xff6666);
+  gfx.fillRect(2, 5, 1, 1);
+  // Liquid dark
+  gfx.fillStyle(0xaa2222);
+  gfx.fillRect(4, 6, 2, 2);
+
+  // Glass shine
+  gfx.fillStyle(0xffaaaa);
+  gfx.fillRect(2, 3, 1, 2);
+
+  // Heart symbol on bottle
+  gfx.fillStyle(0xff8888);
+  gfx.fillRect(3, 5, 1, 1);
+  gfx.fillRect(4, 5, 1, 1);
+  gfx.fillRect(3, 6, 2, 1);
+
+  gfx.generateTexture('healthPotion', 8, 10);
+  gfx.destroy();
+}
+
+function generateRapier(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 10x3 rapier projectile (thin blade)
+
+  // Dark outline on blade
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(0, 0, 10, 3);
+
+  // Blade (silver, thin)
+  gfx.fillStyle(0xcccccc);
+  gfx.fillRect(3, 1, 6, 1);
+  // Blade highlight
+  gfx.fillStyle(0xeeeeee);
+  gfx.fillRect(5, 1, 3, 1);
+  // Blade tip
+  gfx.fillStyle(0xffffff);
+  gfx.fillRect(9, 1, 1, 1);
+
+  // Guard (gold cross)
+  gfx.fillStyle(0xffd700);
+  gfx.fillRect(2, 0, 1, 3);
+  gfx.fillStyle(0xccaa00);
+  gfx.fillRect(2, 0, 1, 1);
+  gfx.fillRect(2, 2, 1, 1);
+
+  // Handle (dark)
+  gfx.fillStyle(0x4a2e16);
+  gfx.fillRect(0, 1, 2, 1);
+  gfx.fillStyle(0x5c3a1e);
+  gfx.fillRect(1, 1, 1, 1);
+
+  gfx.generateTexture('rapier', 10, 3);
+  gfx.destroy();
 }

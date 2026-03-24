@@ -44,6 +44,32 @@ export class BootScene extends Phaser.Scene {
       repeat: -1,
     });
 
+    // Set up spritesheet frames for fencer
+    const fencerTex = this.textures.get('fencer_sheet');
+    fencerTex.add(0, 0, 0, 0, 16, 16);
+    fencerTex.add(1, 0, 16, 0, 16, 16);
+    fencerTex.add(2, 0, 32, 0, 16, 16);
+    fencerTex.add(3, 0, 48, 0, 16, 16);
+
+    this.anims.create({
+      key: 'fencer_idle',
+      frames: [{ key: 'fencer_sheet', frame: 0 }],
+      frameRate: 1,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: 'fencer_walk',
+      frames: [
+        { key: 'fencer_sheet', frame: 1 },
+        { key: 'fencer_sheet', frame: 0 },
+        { key: 'fencer_sheet', frame: 2 },
+        { key: 'fencer_sheet', frame: 0 },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+
     // Generate sounds
     generateSounds(this);
 

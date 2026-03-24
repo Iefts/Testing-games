@@ -8,6 +8,7 @@ import { XPSystem } from '../systems/XPSystem.js';
 import { TimerSystem } from '../systems/TimerSystem.js';
 import { UpgradeManager } from '../systems/UpgradeManager.js';
 import { Revolver } from '../weapons/Revolver.js';
+import { Rapier } from '../weapons/Rapier.js';
 import { DamageAura } from '../weapons/DamageAura.js';
 import { UnicornRider } from '../weapons/UnicornRider.js';
 import { PiercingDart } from '../weapons/PiercingDart.js';
@@ -38,6 +39,13 @@ export class GameScene extends Phaser.Scene {
     this.trees = this.physics.add.staticGroup();
     this.spawnTrees();
 
+    // Breakable pots
+    this.pots = this.physics.add.group();
+    this.spawnPots();
+
+    // Health potions group
+    this.healthPotions = this.physics.add.group();
+
     // Enemy group
     this.enemies = this.physics.add.group();
 
@@ -53,8 +61,12 @@ export class GameScene extends Phaser.Scene {
     // Weapons (starting weapon is always active)
     this.weapons = [];
     this.upgradeWeapons = {}; // keyed by upgrade id
-    this.revolver = new Revolver(this, this.player);
-    this.weapons.push(this.revolver);
+    if (charConfig.startingWeapon === 'rapier') {
+      this.startingWeapon = new Rapier(this, this.player);
+    } else {
+      this.startingWeapon = new Revolver(this, this.player);
+    }
+    this.weapons.push(this.startingWeapon);
 
     // Upgrade manager (pass character ID for character-specific upgrades)
     this.upgradeManager = new UpgradeManager(this, charId);
@@ -74,9 +86,9 @@ export class GameScene extends Phaser.Scene {
     // Damage numbers
     this.damageNumbers = new DamageNumbers(this);
 
-    // Collisions: bullets hit enemies
+    // Collisions: starting weapon bullets hit enemies
     this.physics.add.overlap(
-      this.revolver.bullets,
+      this.startingWeapon.bullets,
       this.enemies,
       this.onBulletHitEnemy,
       null,
@@ -94,6 +106,24 @@ export class GameScene extends Phaser.Scene {
 
     // Collisions: player bumps into trees
     this.physics.add.collider(this.player, this.trees);
+
+    // Collisions: starting weapon bullets break pots
+    this.physics.add.overlap(
+      this.startingWeapon.bullets,
+      this.pots,
+      this.onBulletHitPot,
+      null,
+      this
+    );
+
+    // Collisions: player picks up health potions
+    this.physics.add.overlap(
+      this.player,
+      this.healthPotions,
+      this.onPlayerPickupPotion,
+      null,
+      this
+    );
 
     // Camera follows player with zoom
     this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -159,7 +189,8 @@ export class GameScene extends Phaser.Scene {
     bullet.body.enable = false;
 
     enemy.takeDamage(bullet.damage);
-    this.damageNumbers.show(enemy.x, enemy.y, bullet.damage, DAMAGE_COLORS.revolver);
+    const bulletColor = this.characterId === 'fencer' ? DAMAGE_COLORS.rapier : DAMAGE_COLORS.revolver;
+    this.damageNumbers.show(enemy.x, enemy.y, bullet.damage, bulletColor);
     this.sound.play('sfx_hit', { volume: 0.2 });
   }
 
@@ -208,9 +239,15 @@ export class GameScene extends Phaser.Scene {
     const newLevel = this.upgradeManager.applyUpgrade(upgrade.id);
     const stats = this.upgradeManager.getStats(upgrade.id);
 
-    // Revolver upgrade applies directly to the existing revolver
-    if (upgrade.id === 'revolverUp') {
-      this.revolver.updateStats(stats);
+    // Starting weapon upgrades apply directly to the existing weapon
+    if (upgrade.id === 'revolverUp' || upgrade.id === 'rapierUp') {
+      this.startingWeapon.updateStats(stats);
+      return;
+    }
+
+    // Passive upgrades
+    if (upgrade.id === 'magnetRange') {
+      this.xpSystem.magnetRadius = stats.magnetRadius;
       return;
     }
 
@@ -230,10 +267,12 @@ export class GameScene extends Phaser.Scene {
         case 'piercingDart':
           weapon = new PiercingDart(this, this.player, stats);
           weapon.setupCollision(this.enemies);
+          this.physics.add.overlap(weapon.darts, this.pots, this.onBulletHitPot, null, this);
           break;
         case 'spearRain':
           weapon = new SpearRain(this, this.player, stats);
           weapon.setupCollision(this.enemies);
+          this.physics.add.overlap(weapon.spears, this.pots, this.onBulletHitPot, null, this);
           break;
         case 'flameTrail':
           weapon = new FlameTrail(this, this.player, stats);
@@ -278,6 +317,106 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(1000, () => {
       this.scene.start('GameOver', { victory: true, stats: this.getStats() });
     });
+  }
+
+  onBulletHitPot(bullet, pot) {
+    if (!bullet.active || !pot.active) return;
+
+    bullet.setActive(false);
+    bullet.setVisible(false);
+    bullet.body.enable = false;
+
+    this.breakPot(pot);
+  }
+
+  breakPot(pot) {
+    pot.setActive(false);
+    pot.setVisible(false);
+    pot.body.enable = false;
+
+    this.sound.play('sfx_potBreak', { volume: 0.25 });
+
+    // Shatter particles
+    const particles = this.add.particles(pot.x, pot.y, 'bullet', {
+      speed: { min: 20, max: 60 },
+      scale: { start: 1, end: 0 },
+      lifespan: 250,
+      quantity: 4,
+      tint: 0xcc7744,
+      emitting: false,
+    });
+    particles.explode();
+    this.time.delayedCall(300, () => particles.destroy());
+
+    // 15% chance to drop XP gem
+    if (Math.random() < 0.15) {
+      const gem = this.xpSystem.gems.get(pot.x, pot.y, 'xpGem');
+      if (gem) {
+        gem.setActive(true);
+        gem.setVisible(true);
+        gem.body.enable = true;
+        gem.xpValue = 10;
+        gem.body.setAllowGravity(false);
+        gem.setVelocity(0, 0);
+      }
+    }
+
+    // 3% chance to drop health potion
+    if (Math.random() < 0.03) {
+      const potion = this.healthPotions.get(pot.x, pot.y, 'healthPotion');
+      if (potion) {
+        potion.setActive(true);
+        potion.setVisible(true);
+        potion.body.enable = true;
+        potion.body.setAllowGravity(false);
+        potion.setVelocity(0, 0);
+        potion.setDepth(5);
+      }
+    }
+
+    // Respawn pot after 30-60 seconds at a random location
+    this.time.delayedCall(Phaser.Math.Between(30000, 60000), () => {
+      const x = Phaser.Math.Between(40, MAP_WIDTH - 40);
+      const y = Phaser.Math.Between(40, MAP_HEIGHT - 40);
+      pot.setPosition(x, y);
+      pot.setActive(true);
+      pot.setVisible(true);
+      pot.body.enable = true;
+    });
+  }
+
+  onPlayerPickupPotion(player, potion) {
+    if (!potion.active) return;
+
+    potion.setActive(false);
+    potion.setVisible(false);
+    potion.body.enable = false;
+
+    // Heal 50% of max HP
+    const healAmount = Math.floor(player.maxHp * 0.5);
+    player.hp = Math.min(player.maxHp, player.hp + healAmount);
+
+    this.sound.play('sfx_healthPickup', { volume: 0.3 });
+    this.damageNumbers.show(player.x, player.y, healAmount, '#44ff44');
+  }
+
+  spawnPots() {
+    const potCount = Math.floor(MAP_WIDTH * MAP_HEIGHT * 0.000015);
+    const playerX = MAP_WIDTH / 2;
+    const playerY = MAP_HEIGHT / 2;
+
+    for (let i = 0; i < potCount; i++) {
+      const x = Phaser.Math.Between(40, MAP_WIDTH - 40);
+      const y = Phaser.Math.Between(40, MAP_HEIGHT - 40);
+
+      const dist = Phaser.Math.Distance.Between(x, y, playerX, playerY);
+      if (dist < 160) continue;
+
+      const pot = this.pots.create(x, y, 'pot');
+      pot.body.setAllowGravity(false);
+      pot.body.setImmovable(true);
+      pot.setDepth(y);
+    }
   }
 
   spawnTrees() {

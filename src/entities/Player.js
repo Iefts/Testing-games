@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, config) {
-    super(scene, x, y, 'player_sheet', 0);
+    const sheetKey = config.spriteSheet || 'player_sheet';
+    super(scene, x, y, sheetKey, 0);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -24,7 +25,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .setOrigin(0, 0.5).setDepth(11);
 
     // Start with idle animation
-    this.play('player_idle');
+    this.animPrefix = config.animPrefix || 'player';
+    this.play(`${this.animPrefix}_idle`);
   }
 
   updateHealthBar() {
@@ -47,9 +49,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const moving = vector.x !== 0 || vector.y !== 0;
 
     // Play appropriate animation
+    const walkKey = `${this.animPrefix}_walk`;
+    const idleKey = `${this.animPrefix}_idle`;
     if (moving) {
-      if (this.anims.currentAnim?.key !== 'player_walk') {
-        this.play('player_walk');
+      if (this.anims.currentAnim?.key !== walkKey) {
+        this.play(walkKey);
       }
       // Flip sprite based on movement direction
       if (vector.x < 0) {
@@ -58,8 +62,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setFlipX(false);
       }
     } else {
-      if (this.anims.currentAnim?.key !== 'player_idle') {
-        this.play('player_idle');
+      if (this.anims.currentAnim?.key !== idleKey) {
+        this.play(idleKey);
       }
     }
   }

@@ -37,5 +37,6 @@ export const DAMAGE_COLORS = {
   flameTrail: '#ff6600',
   tornado: '#bbbbbb',
   bugs: '#66dd44',
+  rapier: '#dddddd',
   enemy: '#ff3333',
 };

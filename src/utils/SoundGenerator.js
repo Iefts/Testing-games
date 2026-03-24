@@ -36,15 +36,17 @@ export function generateSounds(scene) {
   }, 0.15);
 
   createSound(scene, audioCtx, 'sfx_playerHit', (ctx, buf) => {
-    // Crunch/impact
+    // Sharp metallic clang with descending pitch — feels like getting struck
     const data = buf.getChannelData(0);
     for (let i = 0; i < data.length; i++) {
       const t = i / ctx.sampleRate;
-      const env = Math.exp(-t * 25);
-      data[i] = env * (Math.random() * 2 - 1) * 0.5;
-      data[i] += env * Math.sin(t * 150) * 0.3;
+      const env = Math.exp(-t * 18);
+      const freq = 600 - t * 2000;
+      data[i] = env * Math.sin(t * freq * Math.PI * 2) * 0.25;
+      data[i] += env * Math.sin(t * freq * 1.5 * Math.PI * 2) * 0.12;
+      data[i] += Math.exp(-t * 40) * (Math.random() * 2 - 1) * 0.15;
     }
-  }, 0.15);
+  }, 0.2);
 
   createSound(scene, audioCtx, 'sfx_xpPickup', (ctx, buf) => {
     // Bright chime
@@ -182,6 +184,40 @@ export function generateSounds(scene) {
       data[i] *= (Math.sin(t * 150) * 0.5 + 0.5); // rapid chittering
     }
   }, 0.06);
+
+  createSound(scene, audioCtx, 'sfx_rapier', (ctx, buf) => {
+    // Quick metallic slash/thrust
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 50);
+      data[i] = env * Math.sin(t * 1400) * 0.2;
+      data[i] += env * (Math.random() * 2 - 1) * 0.15;
+    }
+  }, 0.08);
+
+  createSound(scene, audioCtx, 'sfx_potBreak', (ctx, buf) => {
+    // Ceramic shatter
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 15);
+      data[i] = env * (Math.random() * 2 - 1) * 0.35;
+      data[i] += env * Math.sin(t * 800 * (1 - t * 3)) * 0.15;
+    }
+  }, 0.18);
+
+  createSound(scene, audioCtx, 'sfx_healthPickup', (ctx, buf) => {
+    // Warm healing chime — ascending sparkle
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 5);
+      const freq = 600 + t * 800;
+      data[i] = env * Math.sin(t * freq * Math.PI * 2) * 0.2;
+      data[i] += env * Math.sin(t * freq * 2 * Math.PI * 2) * 0.08;
+    }
+  }, 0.4);
 
   createSound(scene, audioCtx, 'sfx_tornado', (ctx, buf) => {
     // Sustained wind whoosh
