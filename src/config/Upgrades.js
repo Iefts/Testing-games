@@ -113,11 +113,11 @@ export const UPGRADES = {
     maxLevel: 5,
     weaponClass: 'BugSwarm',
     statsPerLevel: [
-      { swarmCount: 1, bugsPerSwarm: 4, damage: 1, speed: 120 },
-      { swarmCount: 2, bugsPerSwarm: 5, damage: 1.5, speed: 130 },
-      { swarmCount: 3, bugsPerSwarm: 5, damage: 2, speed: 140 },
-      { swarmCount: 4, bugsPerSwarm: 6, damage: 2.5, speed: 150 },
-      { swarmCount: 5, bugsPerSwarm: 6, damage: 3, speed: 160 },
+      { swarmCount: 1, bugsPerSwarm: 4, damage: 1, speed: 170 },
+      { swarmCount: 2, bugsPerSwarm: 5, damage: 1.5, speed: 185 },
+      { swarmCount: 3, bugsPerSwarm: 5, damage: 2, speed: 200 },
+      { swarmCount: 4, bugsPerSwarm: 6, damage: 2.5, speed: 215 },
+      { swarmCount: 5, bugsPerSwarm: 6, damage: 3, speed: 230 },
     ],
   },
 };

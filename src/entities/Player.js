@@ -17,8 +17,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setSize(10, 14);
     this.body.setOffset(3, 1);
 
+    // Health bar above player
+    this.healthBarBg = scene.add.rectangle(x, y - 10, 14, 2, 0x000000)
+      .setOrigin(0.5, 0.5).setDepth(10);
+    this.healthBarFill = scene.add.rectangle(x - 7, y - 10, 14, 2, 0x44cc44)
+      .setOrigin(0, 0.5).setDepth(11);
+
     // Start with idle animation
     this.play('player_idle');
+  }
+
+  updateHealthBar() {
+    const pct = this.hp / this.maxHp;
+    this.healthBarBg.setPosition(this.x, this.y - 10);
+    this.healthBarFill.setPosition(this.x - 7, this.y - 10);
+    this.healthBarFill.width = 14 * pct;
+    if (pct > 0.5) {
+      this.healthBarFill.setFillStyle(0x44cc44);
+    } else if (pct > 0.25) {
+      this.healthBarFill.setFillStyle(0xffaa00);
+    } else {
+      this.healthBarFill.setFillStyle(0xff3333);
+    }
   }
 
   move(vector) {
