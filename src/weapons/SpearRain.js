@@ -44,7 +44,14 @@ export class SpearRain {
     // Only fire if there are enemies on screen
     if (targets.length === 0) return;
 
-    Phaser.Utils.Array.Shuffle(targets);
+    // Prioritize enemies closest to the player
+    const px = this.player.x;
+    const py = this.player.y;
+    targets.sort((a, b) => {
+      const da = (a.x - px) ** 2 + (a.y - py) ** 2;
+      const db = (b.x - px) ** 2 + (b.y - py) ** 2;
+      return da - db;
+    });
 
     this.scene.sound.play('sfx_spearRain', { volume: 0.35 });
 
@@ -54,14 +61,14 @@ export class SpearRain {
 
       this.scene.time.delayedCall(i * 100, () => {
         if (target.active) {
-          this.spawnSpear(target.x, cam);
+          this.spawnSpear(target.x, target.y, cam);
         }
       });
     }
   }
 
-  spawnSpear(x, cam) {
-    const startY = cam.worldView.y - 20;
+  spawnSpear(x, targetY, cam) {
+    const startY = targetY - 60;
     const spear = this.spears.get(x, startY, 'spear');
     if (!spear) return;
 

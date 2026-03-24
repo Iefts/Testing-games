@@ -4,7 +4,7 @@ export const CHARACTERS = {
     name: 'Human',
     sprite: 'player',
     hp: 100,
-    speed: 200,
+    speed: 150,
     startingWeapon: 'revolver',
     weaponUpgrade: 'revolverUp',
   },

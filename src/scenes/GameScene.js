@@ -160,8 +160,8 @@ export class GameScene extends Phaser.Scene {
   onEnemyHitPlayer(player, enemy) {
     if (!enemy.active) return;
     player.takeDamage(enemy.damage);
-    this.sound.play('sfx_playerHit', { volume: 0.4 });
-    this.cameras.main.shake(100, 0.005);
+    this.sound.play('sfx_playerHit', { volume: 0.1 });
+    this.cameras.main.shake(80, 0.002);
   }
 
   onEnemyKilled(enemy) {
