@@ -4,7 +4,10 @@ import { CHARACTERS } from '../config/Characters.js';
 import { Player } from '../entities/Player.js';
 import { InputManager } from '../systems/InputManager.js';
 import { SpawnSystem } from '../systems/SpawnSystem.js';
+import { XPSystem } from '../systems/XPSystem.js';
+import { TimerSystem } from '../systems/TimerSystem.js';
 import { Revolver } from '../weapons/Revolver.js';
+import { HUD } from '../ui/HUD.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -12,6 +15,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.gameOver = false;
+
     // Set world bounds
     this.physics.world.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
 
@@ -36,6 +41,15 @@ export class GameScene extends Phaser.Scene {
 
     // Spawn system
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemies);
+
+    // XP system
+    this.xpSystem = new XPSystem(this, this.player);
+
+    // Timer system
+    this.timerSystem = new TimerSystem(this);
+
+    // HUD
+    this.hud = new HUD(this);
 
     // Collisions: bullets hit enemies
     this.physics.add.overlap(
@@ -65,10 +79,12 @@ export class GameScene extends Phaser.Scene {
     // Listen for events
     this.events.on('enemyKilled', this.onEnemyKilled, this);
     this.events.on('playerDeath', this.onPlayerDeath, this);
+    this.events.on('victory', this.onVictory, this);
+    this.events.on('levelUp', this.onLevelUp, this);
   }
 
   update(time, delta) {
-    if (!this.player || this.player.hp <= 0) return;
+    if (!this.player || this.gameOver) return;
 
     // Player movement
     const movement = this.inputManager.getMovementVector(
@@ -89,19 +105,22 @@ export class GameScene extends Phaser.Scene {
       weapon.update(time, this.enemies);
     });
 
-    // Update spawn system
+    // Update systems
     this.spawnSystem.update(time, delta);
+    this.xpSystem.update();
+    this.timerSystem.update(delta);
+
+    // Update HUD
+    this.hud.update(this.player, this.xpSystem, this.timerSystem, this.killCount);
   }
 
   onBulletHitEnemy(bullet, enemy) {
     if (!bullet.active || !enemy.active) return;
 
-    // Deactivate bullet
     bullet.setActive(false);
     bullet.setVisible(false);
     bullet.body.enable = false;
 
-    // Damage enemy
     enemy.takeDamage(bullet.damage);
   }
 
@@ -114,8 +133,23 @@ export class GameScene extends Phaser.Scene {
     this.killCount++;
   }
 
+  onLevelUp(level) {
+    // Will launch upgrade selection scene in Step 5
+  }
+
   onPlayerDeath() {
-    // For now, just restart
-    this.scene.restart();
+    this.gameOver = true;
+    // Will transition to GameOverScene in Step 6
+    this.time.delayedCall(1000, () => {
+      this.scene.restart();
+    });
+  }
+
+  onVictory() {
+    this.gameOver = true;
+    // Will transition to GameOverScene in Step 6
+    this.time.delayedCall(1000, () => {
+      this.scene.restart();
+    });
   }
 }
