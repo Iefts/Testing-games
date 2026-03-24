@@ -6,7 +6,11 @@ import { InputManager } from '../systems/InputManager.js';
 import { SpawnSystem } from '../systems/SpawnSystem.js';
 import { XPSystem } from '../systems/XPSystem.js';
 import { TimerSystem } from '../systems/TimerSystem.js';
+import { UpgradeManager } from '../systems/UpgradeManager.js';
 import { Revolver } from '../weapons/Revolver.js';
+import { DamageAura } from '../weapons/DamageAura.js';
+import { UnicornRider } from '../weapons/UnicornRider.js';
+import { PiercingDart } from '../weapons/PiercingDart.js';
 import { HUD } from '../ui/HUD.js';
 
 export class GameScene extends Phaser.Scene {
@@ -16,6 +20,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.gameOver = false;
+    this.paused = false;
 
     // Set world bounds
     this.physics.world.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -34,10 +39,14 @@ export class GameScene extends Phaser.Scene {
     // Input manager
     this.inputManager = new InputManager(this);
 
-    // Weapons
+    // Weapons (revolver is always active)
     this.weapons = [];
+    this.upgradeWeapons = {}; // keyed by upgrade id
     this.revolver = new Revolver(this, this.player);
     this.weapons.push(this.revolver);
+
+    // Upgrade manager
+    this.upgradeManager = new UpgradeManager(this);
 
     // Spawn system
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemies);
@@ -84,7 +93,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (!this.player || this.gameOver) return;
+    if (!this.player || this.gameOver || this.paused) return;
 
     // Player movement
     const movement = this.inputManager.getMovementVector(
@@ -100,7 +109,7 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    // Update weapons
+    // Update all weapons
     this.weapons.forEach((weapon) => {
       weapon.update(time, this.enemies);
     });
@@ -134,12 +143,53 @@ export class GameScene extends Phaser.Scene {
   }
 
   onLevelUp(level) {
-    // Will launch upgrade selection scene in Step 5
+    const upgrades = this.upgradeManager.getRandomUpgrades(3);
+    if (upgrades.length === 0) return;
+
+    this.paused = true;
+    this.physics.pause();
+
+    this.scene.launch('LevelUp', {
+      upgrades,
+      onSelect: (selected) => {
+        this.applyUpgrade(selected);
+        this.paused = false;
+        this.physics.resume();
+      },
+    });
+  }
+
+  applyUpgrade(upgrade) {
+    const newLevel = this.upgradeManager.applyUpgrade(upgrade.id);
+    const stats = this.upgradeManager.getStats(upgrade.id);
+
+    if (this.upgradeWeapons[upgrade.id]) {
+      // Upgrade existing weapon
+      this.upgradeWeapons[upgrade.id].updateStats(stats);
+    } else {
+      // Create new weapon
+      let weapon;
+      switch (upgrade.id) {
+        case 'damageAura':
+          weapon = new DamageAura(this, this.player, stats);
+          break;
+        case 'unicornRider':
+          weapon = new UnicornRider(this, this.player, stats);
+          break;
+        case 'piercingDart':
+          weapon = new PiercingDart(this, this.player, stats);
+          weapon.setupCollision(this.enemies);
+          break;
+      }
+      if (weapon) {
+        this.upgradeWeapons[upgrade.id] = weapon;
+        this.weapons.push(weapon);
+      }
+    }
   }
 
   onPlayerDeath() {
     this.gameOver = true;
-    // Will transition to GameOverScene in Step 6
     this.time.delayedCall(1000, () => {
       this.scene.restart();
     });
@@ -147,7 +197,6 @@ export class GameScene extends Phaser.Scene {
 
   onVictory() {
     this.gameOver = true;
-    // Will transition to GameOverScene in Step 6
     this.time.delayedCall(1000, () => {
       this.scene.restart();
     });

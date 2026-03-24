@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { LevelUpScene } from './scenes/LevelUpScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -17,7 +18,7 @@ const config = {
     width: 480,
     height: 270,
   },
-  scene: [BootScene, GameScene],
+  scene: [BootScene, GameScene, LevelUpScene],
 };
 
 new Phaser.Game(config);
