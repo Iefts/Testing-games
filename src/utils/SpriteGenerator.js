@@ -12,34 +12,99 @@ export function generateSprites(scene) {
 
 function generatePlayer(scene) {
   const gfx = scene.make.graphics({ add: false });
-  // 16x16 pixel art human character
-  // Body (brown shirt)
-  gfx.fillStyle(0x8b6914);
-  gfx.fillRect(5, 6, 6, 6);
-  // Head (skin)
-  gfx.fillStyle(0xf5c69a);
-  gfx.fillRect(5, 2, 6, 4);
-  // Hair (dark brown)
-  gfx.fillStyle(0x4a3210);
-  gfx.fillRect(5, 1, 6, 2);
-  // Eyes
-  gfx.fillStyle(0x000000);
-  gfx.fillRect(6, 3, 1, 1);
-  gfx.fillRect(9, 3, 1, 1);
-  // Legs (blue pants)
-  gfx.fillStyle(0x3355aa);
-  gfx.fillRect(5, 12, 2, 3);
-  gfx.fillRect(9, 12, 2, 3);
-  // Arms (skin)
-  gfx.fillStyle(0xf5c69a);
-  gfx.fillRect(3, 7, 2, 4);
-  gfx.fillRect(11, 7, 2, 4);
-  // Shoes (dark)
-  gfx.fillStyle(0x333333);
-  gfx.fillRect(5, 15, 2, 1);
-  gfx.fillRect(9, 15, 2, 1);
-  gfx.generateTexture('player', 16, 16);
+  // 4-frame spritesheet (64x16): idle, walk1, walk2, walk3
+  // Cowboy/gunslinger design: hat, vest, holster, boots
+
+  for (let frame = 0; frame < 4; frame++) {
+    const ox = frame * 16; // x offset for each frame
+
+    // Leg positions vary per frame for walk cycle
+    const legOffset = [0, -1, 0, 1][frame]; // leg sway
+
+    // Cowboy hat (dark brown, wide brim)
+    gfx.fillStyle(0x5c3a1e);
+    gfx.fillRect(ox + 3, 0, 10, 2);  // brim
+    gfx.fillStyle(0x6b4226);
+    gfx.fillRect(ox + 5, 0, 6, 1);   // top of hat
+    gfx.fillRect(ox + 5, 1, 6, 1);   // hat body
+    // Hat band (red)
+    gfx.fillStyle(0xcc3333);
+    gfx.fillRect(ox + 5, 2, 6, 1);
+
+    // Head (skin)
+    gfx.fillStyle(0xf5c69a);
+    gfx.fillRect(ox + 5, 3, 6, 3);
+    // Eyes
+    gfx.fillStyle(0x000000);
+    gfx.fillRect(ox + 6, 4, 1, 1);
+    gfx.fillRect(ox + 9, 4, 1, 1);
+    // Stubble/chin shadow
+    gfx.fillStyle(0xd4a574);
+    gfx.fillRect(ox + 6, 5, 4, 1);
+
+    // Vest (dark leather brown)
+    gfx.fillStyle(0x5c3a1e);
+    gfx.fillRect(ox + 5, 6, 6, 5);
+    // Shirt underneath (off-white)
+    gfx.fillStyle(0xddccaa);
+    gfx.fillRect(ox + 6, 6, 4, 4);
+    // Vest lapels
+    gfx.fillStyle(0x4a2e16);
+    gfx.fillRect(ox + 5, 6, 1, 4);
+    gfx.fillRect(ox + 10, 6, 1, 4);
+
+    // Belt (dark) with gold buckle
+    gfx.fillStyle(0x333333);
+    gfx.fillRect(ox + 5, 10, 6, 1);
+    gfx.fillStyle(0xffd700);
+    gfx.fillRect(ox + 7, 10, 2, 1);
+
+    // Arms (skin + gloves)
+    gfx.fillStyle(0xf5c69a);
+    gfx.fillRect(ox + 3, 7, 2, 2);
+    gfx.fillRect(ox + 11, 7, 2, 2);
+    // Gloves (dark brown)
+    gfx.fillStyle(0x4a2e16);
+    gfx.fillRect(ox + 3, 9, 2, 2);
+    gfx.fillRect(ox + 11, 9, 2, 2);
+
+    // Legs (brown pants) with walk animation
+    gfx.fillStyle(0x6b5030);
+    // Left leg
+    gfx.fillRect(ox + 5, 11, 2, 3 + legOffset);
+    // Right leg
+    gfx.fillRect(ox + 9, 11, 2, 3 - legOffset);
+
+    // Boots (dark with spur detail)
+    gfx.fillStyle(0x3a2010);
+    gfx.fillRect(ox + 4, 14 + legOffset, 3, 2 - Math.abs(legOffset));
+    gfx.fillRect(ox + 9, 14 - legOffset, 3, 2 - Math.abs(legOffset));
+    // Spur (silver)
+    gfx.fillStyle(0xcccccc);
+    if (frame === 0 || frame === 2) {
+      gfx.fillRect(ox + 4, 15, 1, 1);
+      gfx.fillRect(ox + 11, 15, 1, 1);
+    }
+
+    // Holster on right hip
+    gfx.fillStyle(0x4a2e16);
+    gfx.fillRect(ox + 11, 10, 1, 2);
+  }
+
+  gfx.generateTexture('player_sheet', 64, 16);
   gfx.destroy();
+
+  // Create spritesheet from generated texture
+  scene.textures.get('player_sheet').add('__BASE', 0, 0, 0, 64, 16);
+
+  // Also create a single-frame 'player' texture for menus
+  const singleGfx = scene.make.graphics({ add: false });
+  // Draw just frame 0 as the 'player' key for character select
+  const rt = scene.make.renderTexture({ width: 16, height: 16, add: false });
+  const tempSprite = scene.add.sprite(0, 0, 'player_sheet').setOrigin(0, 0).setCrop(0, 0, 16, 16);
+  rt.draw(tempSprite, 0, 0);
+  rt.saveTexture('player');
+  tempSprite.destroy();
 }
 
 function generateSlime(scene) {
