@@ -114,11 +114,11 @@ export const UPGRADES = {
     weaponClass: 'Rapier',
     characterOnly: 'fencer',
     statsPerLevel: [
-      { fireRate: 350, damage: 6, bulletSpeed: 370, range: 270 },
-      { fireRate: 300, damage: 8, bulletSpeed: 390, range: 290 },
-      { fireRate: 260, damage: 10, bulletSpeed: 410, range: 310 },
-      { fireRate: 220, damage: 13, bulletSpeed: 430, range: 330 },
-      { fireRate: 180, damage: 17, bulletSpeed: 450, range: 360 },
+      { fireRate: 800, damage: 20, range: 90 },
+      { fireRate: 750, damage: 28, range: 95 },
+      { fireRate: 700, damage: 36, range: 100 },
+      { fireRate: 650, damage: 45, range: 105 },
+      { fireRate: 600, damage: 55, range: 110 },
     ],
   },
   magnetRange: {

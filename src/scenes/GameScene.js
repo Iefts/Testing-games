@@ -61,8 +61,10 @@ export class GameScene extends Phaser.Scene {
     // Weapons (starting weapon is always active)
     this.weapons = [];
     this.upgradeWeapons = {}; // keyed by upgrade id
-    if (charConfig.startingWeapon === 'rapier') {
+    this.isRapierChar = charConfig.startingWeapon === 'rapier';
+    if (this.isRapierChar) {
       this.startingWeapon = new Rapier(this, this.player);
+      this.startingWeapon.setupCollision(this.enemies);
     } else {
       this.startingWeapon = new Revolver(this, this.player);
     }
@@ -86,14 +88,16 @@ export class GameScene extends Phaser.Scene {
     // Damage numbers
     this.damageNumbers = new DamageNumbers(this);
 
-    // Collisions: starting weapon bullets hit enemies
-    this.physics.add.overlap(
-      this.startingWeapon.bullets,
-      this.enemies,
-      this.onBulletHitEnemy,
-      null,
-      this
-    );
+    // Collisions: starting weapon bullets hit enemies (revolver only, rapier handles its own)
+    if (!this.isRapierChar) {
+      this.physics.add.overlap(
+        this.startingWeapon.bullets,
+        this.enemies,
+        this.onBulletHitEnemy,
+        null,
+        this
+      );
+    }
 
     // Collisions: enemies hit player
     this.physics.add.overlap(
@@ -107,14 +111,29 @@ export class GameScene extends Phaser.Scene {
     // Collisions: player bumps into trees
     this.physics.add.collider(this.player, this.trees);
 
-    // Collisions: starting weapon bullets break pots
-    this.physics.add.overlap(
-      this.startingWeapon.bullets,
-      this.pots,
-      this.onBulletHitPot,
-      null,
-      this
-    );
+    // Collisions: starting weapon breaks pots
+    if (this.isRapierChar) {
+      // Rapier thrust breaks pots
+      this.physics.add.overlap(
+        this.startingWeapon,
+        this.pots,
+        (rapier, pot) => {
+          if (!rapier.active || !pot.active) return;
+          this.breakPot(pot);
+        },
+        null,
+        this
+      );
+    } else {
+      // Revolver bullets break pots
+      this.physics.add.overlap(
+        this.startingWeapon.bullets,
+        this.pots,
+        this.onBulletHitPot,
+        null,
+        this
+      );
+    }
 
     // Collisions: player picks up health potions
     this.physics.add.overlap(
@@ -189,8 +208,7 @@ export class GameScene extends Phaser.Scene {
     bullet.body.enable = false;
 
     enemy.takeDamage(bullet.damage);
-    const bulletColor = this.characterId === 'fencer' ? DAMAGE_COLORS.rapier : DAMAGE_COLORS.revolver;
-    this.damageNumbers.show(enemy.x, enemy.y, bullet.damage, bulletColor);
+    this.damageNumbers.show(enemy.x, enemy.y, bullet.damage, DAMAGE_COLORS.revolver);
     this.sound.play('sfx_hit', { volume: 0.2 });
   }
 
