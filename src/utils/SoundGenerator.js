@@ -157,6 +157,32 @@ export function generateSounds(scene) {
       data[i] += env * Math.sin(t * 500 * (1 - t * 2)) * 0.15;
     }
   }, 0.25);
+
+  createSound(scene, audioCtx, 'sfx_flameDrop', (ctx, buf) => {
+    // Short crackling/sizzle
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 30);
+      // Crackle: filtered noise + slight tone
+      data[i] = env * (Math.random() * 2 - 1) * 0.3;
+      data[i] *= (Math.sin(t * 80) * 0.5 + 0.5); // amplitude modulation for crackle
+      data[i] += env * Math.sin(t * 300) * 0.08;
+    }
+  }, 0.12);
+
+  createSound(scene, audioCtx, 'sfx_tornado', (ctx, buf) => {
+    // Sustained wind whoosh
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.min(t * 5, 1) * Math.exp(-t * 2.5);
+      // Layered noise with low-frequency modulation for wind effect
+      data[i] = env * (Math.random() * 2 - 1) * 0.2;
+      data[i] *= (Math.sin(t * 8) * 0.3 + 0.7); // slow wobble
+      data[i] += env * Math.sin(t * 100) * 0.1; // low hum
+    }
+  }, 0.5);
 }
 
 function createSound(scene, audioCtx, key, fillFn, duration) {

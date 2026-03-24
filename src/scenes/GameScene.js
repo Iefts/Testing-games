@@ -12,6 +12,8 @@ import { DamageAura } from '../weapons/DamageAura.js';
 import { UnicornRider } from '../weapons/UnicornRider.js';
 import { PiercingDart } from '../weapons/PiercingDart.js';
 import { SpearRain } from '../weapons/SpearRain.js';
+import { FlameTrail } from '../weapons/FlameTrail.js';
+import { Tornado } from '../weapons/Tornado.js';
 import { HUD } from '../ui/HUD.js';
 
 export class GameScene extends Phaser.Scene {
@@ -215,6 +217,14 @@ export class GameScene extends Phaser.Scene {
           break;
         case 'spearRain':
           weapon = new SpearRain(this, this.player, stats);
+          weapon.setupCollision(this.enemies);
+          break;
+        case 'flameTrail':
+          weapon = new FlameTrail(this, this.player, stats);
+          weapon.setupCollision(this.enemies);
+          break;
+        case 'tornado':
+          weapon = new Tornado(this, this.player, stats);
           weapon.setupCollision(this.enemies);
           break;
       }

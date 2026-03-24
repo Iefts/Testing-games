@@ -9,6 +9,8 @@ export function generateSprites(scene) {
   generateUnicorn(scene);
   generateAura(scene);
   generateSpear(scene);
+  generateFlame(scene);
+  generateTornado(scene);
 }
 
 function generatePlayer(scene) {
@@ -294,5 +296,55 @@ function generateSpear(scene) {
   gfx.fillStyle(0xeeeeee);
   gfx.fillRect(1, 13, 2, 1);
   gfx.generateTexture('spear', 4, 14);
+  gfx.destroy();
+}
+
+function generateFlame(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 8x8 fire patch
+  // Core (bright yellow)
+  gfx.fillStyle(0xffcc00);
+  gfx.fillRect(2, 3, 4, 3);
+  // Inner flame (orange)
+  gfx.fillStyle(0xff6600);
+  gfx.fillRect(1, 2, 6, 4);
+  gfx.fillRect(2, 1, 4, 6);
+  // Tips (red)
+  gfx.fillStyle(0xcc2200);
+  gfx.fillRect(3, 0, 2, 2);
+  gfx.fillRect(1, 1, 2, 2);
+  gfx.fillRect(5, 1, 2, 2);
+  // Hot center (white-yellow)
+  gfx.fillStyle(0xffee88);
+  gfx.fillRect(3, 4, 2, 2);
+  gfx.generateTexture('flame', 8, 8);
+  gfx.destroy();
+}
+
+function generateTornado(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 12x20 funnel — wide at top, narrow at base
+  // Top (lightest grey, widest)
+  gfx.fillStyle(0xbbbbbb);
+  gfx.fillRect(1, 0, 10, 3);
+  // Upper middle
+  gfx.fillStyle(0x999999);
+  gfx.fillRect(2, 3, 8, 4);
+  // Middle
+  gfx.fillStyle(0x777777);
+  gfx.fillRect(3, 7, 6, 4);
+  // Lower middle
+  gfx.fillStyle(0x666666);
+  gfx.fillRect(4, 11, 4, 4);
+  // Base (darkest, narrowest)
+  gfx.fillStyle(0x555555);
+  gfx.fillRect(5, 15, 2, 5);
+  // Swirl highlights
+  gfx.fillStyle(0xcccccc);
+  gfx.fillRect(3, 1, 2, 1);
+  gfx.fillRect(6, 4, 3, 1);
+  gfx.fillRect(4, 9, 2, 1);
+  gfx.fillRect(5, 13, 1, 1);
+  gfx.generateTexture('tornado', 12, 20);
   gfx.destroy();
 }
