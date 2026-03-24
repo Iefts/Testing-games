@@ -146,6 +146,17 @@ export function generateSounds(scene) {
       data[i] += env * Math.sin(t * freq * 0.5 * Math.PI * 2) * 0.15;
     }
   }, 0.8);
+
+  createSound(scene, audioCtx, 'sfx_spearRain', (ctx, buf) => {
+    // Whooshing rain of spears
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.min(t * 10, 1) * Math.exp(-t * 6);
+      data[i] = env * (Math.random() * 2 - 1) * 0.25;
+      data[i] += env * Math.sin(t * 500 * (1 - t * 2)) * 0.15;
+    }
+  }, 0.25);
 }
 
 function createSound(scene, audioCtx, key, fillFn, duration) {

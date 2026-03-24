@@ -8,6 +8,7 @@ export function generateSprites(scene) {
   generateDart(scene);
   generateUnicorn(scene);
   generateAura(scene);
+  generateSpear(scene);
 }
 
 function generatePlayer(scene) {
@@ -273,5 +274,25 @@ function generateAura(scene) {
   gfx.fillStyle(0x88ccff, 0.2);
   gfx.fillCircle(16, 16, 12);
   gfx.generateTexture('aura', 32, 32);
+  gfx.destroy();
+}
+
+function generateSpear(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 4x14 vertical spear pointing down
+  // Shaft (brown wood)
+  gfx.fillStyle(0x8b6914);
+  gfx.fillRect(1, 0, 2, 10);
+  // Shaft detail
+  gfx.fillStyle(0x6b4e10);
+  gfx.fillRect(2, 1, 1, 8);
+  // Spearhead (silver/steel)
+  gfx.fillStyle(0xcccccc);
+  gfx.fillRect(1, 10, 2, 2);
+  gfx.fillRect(0, 11, 4, 2);
+  // Tip
+  gfx.fillStyle(0xeeeeee);
+  gfx.fillRect(1, 13, 2, 1);
+  gfx.generateTexture('spear', 4, 14);
   gfx.destroy();
 }

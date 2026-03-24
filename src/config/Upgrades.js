@@ -29,6 +29,21 @@ export const UPGRADES = {
       { damage: 130, cooldown: 4000, speed: 400 },
     ],
   },
+  spearRain: {
+    id: 'spearRain',
+    name: 'Spear Rain',
+    description: 'Rains spears from the sky',
+    icon: 'spear',
+    maxLevel: 5,
+    weaponClass: 'SpearRain',
+    statsPerLevel: [
+      { spearCount: 2, damage: 15, cooldown: 5000 },
+      { spearCount: 4, damage: 18, cooldown: 4500 },
+      { spearCount: 6, damage: 22, cooldown: 4000 },
+      { spearCount: 8, damage: 26, cooldown: 3500 },
+      { spearCount: 10, damage: 30, cooldown: 3000 },
+    ],
+  },
   piercingDart: {
     id: 'piercingDart',
     name: 'Piercing Dart',

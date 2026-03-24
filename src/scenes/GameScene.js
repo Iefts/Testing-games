@@ -11,6 +11,7 @@ import { Revolver } from '../weapons/Revolver.js';
 import { DamageAura } from '../weapons/DamageAura.js';
 import { UnicornRider } from '../weapons/UnicornRider.js';
 import { PiercingDart } from '../weapons/PiercingDart.js';
+import { SpearRain } from '../weapons/SpearRain.js';
 import { HUD } from '../ui/HUD.js';
 
 export class GameScene extends Phaser.Scene {
@@ -210,6 +211,10 @@ export class GameScene extends Phaser.Scene {
           break;
         case 'piercingDart':
           weapon = new PiercingDart(this, this.player, stats);
+          weapon.setupCollision(this.enemies);
+          break;
+        case 'spearRain':
+          weapon = new SpearRain(this, this.player, stats);
           weapon.setupCollision(this.enemies);
           break;
       }
