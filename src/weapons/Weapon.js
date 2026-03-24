@@ -29,12 +29,22 @@ export class Weapon {
     this.lastFired = time;
   }
 
+  isOnScreen(enemy) {
+    const cam = this.scene.cameras.main;
+    const sx = (enemy.x - cam.worldView.x) * cam.zoom;
+    const sy = (enemy.y - cam.worldView.y) * cam.zoom;
+    const margin = 16;
+    return sx >= -margin && sx <= cam.width + margin &&
+           sy >= -margin && sy <= cam.height + margin;
+  }
+
   findNearestEnemy(enemies) {
     let nearest = null;
     let nearestDist = this.range;
 
     enemies.getChildren().forEach((enemy) => {
       if (!enemy.active) return;
+      if (!this.isOnScreen(enemy)) return;
       const dist = Phaser.Math.Distance.Between(
         this.player.x, this.player.y,
         enemy.x, enemy.y
