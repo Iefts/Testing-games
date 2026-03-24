@@ -97,6 +97,15 @@ export class GameScene extends Phaser.Scene {
     this.events.on('playerDeath', this.onPlayerDeath, this);
     this.events.on('victory', this.onVictory, this);
     this.events.on('levelUp', this.onLevelUp, this);
+
+    // Pause on Escape
+    this.input.keyboard.on('keydown-ESC', () => {
+      if (this.gameOver || this.paused) return;
+      this.paused = true;
+      this.physics.pause();
+      this.timerSystem.pause();
+      this.scene.launch('Pause');
+    });
   }
 
   update(time, delta) {
