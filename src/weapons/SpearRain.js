@@ -98,6 +98,9 @@ export class SpearRain {
         if (!spear.active || !enemy.active || spear.hasHit) return;
         spear.hasHit = true;
         enemy.takeDamage(spear.damage);
+        if (this.scene.damageNumbers) {
+          this.scene.damageNumbers.show(enemy.x, enemy.y, spear.damage, '#cc8844');
+        }
 
         // Spear sticks (stops and fades out)
         spear.setVelocity(0, 0);

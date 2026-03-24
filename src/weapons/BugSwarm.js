@@ -115,6 +115,9 @@ export class BugSwarm {
         });
         if (anyClose && target.active) {
           target.takeDamage(this.damage);
+          if (this.scene.damageNumbers) {
+            this.scene.damageNumbers.show(target.x, target.y, this.damage, '#66dd44');
+          }
           swarm.lastDamageTick = now;
         }
       }

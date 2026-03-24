@@ -55,6 +55,9 @@ export class UnicornRider {
         if (!enemy.active || hitEnemies.has(enemy)) return;
         hitEnemies.add(enemy);
         enemy.takeDamage(this.damage);
+        if (this.scene.damageNumbers) {
+          this.scene.damageNumbers.show(enemy.x, enemy.y, this.damage, '#aa44ff');
+        }
       }
     );
 

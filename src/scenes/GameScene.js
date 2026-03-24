@@ -16,6 +16,7 @@ import { FlameTrail } from '../weapons/FlameTrail.js';
 import { Tornado } from '../weapons/Tornado.js';
 import { BugSwarm } from '../weapons/BugSwarm.js';
 import { HUD } from '../ui/HUD.js';
+import { DamageNumbers, DAMAGE_COLORS } from '../ui/DamageNumbers.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -69,6 +70,9 @@ export class GameScene extends Phaser.Scene {
 
     // HUD
     this.hud = new HUD(this);
+
+    // Damage numbers
+    this.damageNumbers = new DamageNumbers(this);
 
     // Collisions: bullets hit enemies
     this.physics.add.overlap(
@@ -144,6 +148,7 @@ export class GameScene extends Phaser.Scene {
 
     // Update HUD
     this.hud.update(this.player, this.xpSystem, this.timerSystem, this.killCount);
+    this.player.updateHealthBar();
   }
 
   onBulletHitEnemy(bullet, enemy) {
@@ -154,12 +159,14 @@ export class GameScene extends Phaser.Scene {
     bullet.body.enable = false;
 
     enemy.takeDamage(bullet.damage);
+    this.damageNumbers.show(enemy.x, enemy.y, bullet.damage, DAMAGE_COLORS.revolver);
     this.sound.play('sfx_hit', { volume: 0.2 });
   }
 
   onEnemyHitPlayer(player, enemy) {
     if (!enemy.active) return;
     player.takeDamage(enemy.damage);
+    this.damageNumbers.show(player.x, player.y, enemy.damage, DAMAGE_COLORS.enemy);
     this.sound.play('sfx_playerHit', { volume: 0.1 });
     this.cameras.main.shake(80, 0.002);
   }

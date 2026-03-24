@@ -49,6 +49,9 @@ export class DamageAura {
       );
       if (dist <= this.radius) {
         enemy.takeDamage(this.damage);
+        if (this.scene.damageNumbers) {
+          this.scene.damageNumbers.show(enemy.x, enemy.y, this.damage, '#44aaff');
+        }
         hitAny = true;
       }
     });

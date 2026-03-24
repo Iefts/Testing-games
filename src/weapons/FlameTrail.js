@@ -137,6 +137,9 @@ export class FlameTrail {
 
         this.damageCooldowns.set(key, now);
         enemy.takeDamage(flame.damage);
+        if (this.scene.damageNumbers) {
+          this.scene.damageNumbers.show(enemy.x, enemy.y, flame.damage, '#ff6600');
+        }
       }
     );
 

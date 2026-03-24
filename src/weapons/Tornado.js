@@ -154,6 +154,9 @@ export class Tornado {
           if (now - lastHit >= 500) {
             tornado.hitTimes.set(enemy, now);
             enemy.takeDamage(tornado.damage);
+            if (this.scene.damageNumbers) {
+              this.scene.damageNumbers.show(enemy.x, enemy.y, tornado.damage, '#bbbbbb');
+            }
           }
         }
       });

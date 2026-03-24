@@ -103,6 +103,9 @@ export class PiercingDart {
         if (dart.hitEnemies.has(enemy)) return;
         dart.hitEnemies.add(enemy);
         enemy.takeDamage(dart.damage);
+        if (this.scene.damageNumbers) {
+          this.scene.damageNumbers.show(enemy.x, enemy.y, dart.damage, '#cccccc');
+        }
       }
     );
   }
