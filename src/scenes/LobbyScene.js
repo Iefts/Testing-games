@@ -35,7 +35,7 @@ export class LobbyScene extends Phaser.Scene {
       color: '#aaaaaa',
     }).setOrigin(0.5);
 
-    // IP input field (using DOM element)
+    // IP input field (Phaser text as visual display)
     this.ipInput = this.add.text(380, 235, '192.168.1.', {
       fontSize: '18px',
       color: '#ffffff',
@@ -44,23 +44,92 @@ export class LobbyScene extends Phaser.Scene {
       fixedWidth: 200,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-    // Keyboard input for IP
-    this.input.keyboard.on('keydown', (event) => {
-      if (!this.joined) {
-        const current = this.ipInput.text;
-        if (event.key === 'Backspace') {
-          this.ipInput.setText(current.slice(0, -1));
-        } else if (event.key.length === 1 && (event.key.match(/[0-9.]/) || event.key === ':')) {
-          this.ipInput.setText(current + event.key);
-        } else if (event.key === 'Enter') {
-          this.connectTo(this.ipInput.text.trim());
+    // Hidden HTML input for mobile keyboard support
+    this.hiddenInput = document.createElement('input');
+    this.hiddenInput.type = 'text';
+    this.hiddenInput.inputMode = 'url';
+    this.hiddenInput.value = '192.168.1.';
+    this.hiddenInput.autocomplete = 'off';
+    this.hiddenInput.autocorrect = 'off';
+    this.hiddenInput.autocapitalize = 'off';
+    this.hiddenInput.spellcheck = false;
+    Object.assign(this.hiddenInput.style, {
+      position: 'fixed',
+      top: '-1000px',
+      left: '0',
+      opacity: '0',
+      fontSize: '16px',
+      width: '1px',
+      height: '1px',
+      border: 'none',
+      outline: 'none',
+      background: 'transparent',
+    });
+    document.body.appendChild(this.hiddenInput);
+
+    // Sync hidden input to Phaser text display
+    this.hiddenInput.addEventListener('input', () => {
+      const filtered = this.hiddenInput.value.replace(/[^0-9.:]/g, '');
+      if (filtered !== this.hiddenInput.value) {
+        this.hiddenInput.value = filtered;
+      }
+      this.updateInputDisplay();
+    });
+
+    this.hiddenInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.hiddenInput.blur();
+        if (!this.joined) {
+          this.connectTo(this.hiddenInput.value.trim());
         }
       }
     });
 
+    // Tap IP field to focus hidden input (triggers mobile keyboard)
+    this.ipInput.on('pointerdown', (pointer, localX, localY, event) => {
+      if (event) event.stopPropagation();
+      this.hiddenInput.focus();
+    });
+
+    // Focus/blur visual feedback
+    this.hiddenInput.addEventListener('focus', () => {
+      this.ipInput.setStyle({ backgroundColor: '#444477' });
+    });
+    this.hiddenInput.addEventListener('blur', () => {
+      this.ipInput.setStyle({ backgroundColor: '#333355' });
+      this.updateInputDisplay();
+    });
+
+    // Blinking cursor
+    this.cursorVisible = true;
+    this.cursorTimer = this.time.addEvent({
+      delay: 500,
+      loop: true,
+      callback: () => {
+        this.cursorVisible = !this.cursorVisible;
+        this.updateInputDisplay();
+      },
+    });
+
+    // Dismiss keyboard when tapping outside the input field
+    this.input.on('pointerdown', (pointer) => {
+      const bounds = this.ipInput.getBounds();
+      if (!bounds.contains(pointer.x, pointer.y)) {
+        this.hiddenInput.blur();
+      }
+    });
+
+    // Prevent iOS scroll displacement when keyboard opens in landscape
+    this.viewportHandler = () => window.scrollTo(0, 0);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.viewportHandler);
+    }
+
     // Join button
     this.joinBtn = this.createButton(540, 235, 'JOIN', '#44aaff', () => {
-      this.connectTo(this.ipInput.text.trim());
+      this.hiddenInput.blur();
+      this.connectTo(this.hiddenInput.value.trim());
     });
 
     // Character selection (shown after connecting)
@@ -87,6 +156,21 @@ export class LobbyScene extends Phaser.Scene {
     this.createButton(80, 500, 'BACK', '#cc4444', () => {
       this.network.disconnect();
       this.scene.start('Menu');
+    });
+
+    // Cleanup DOM on scene exit
+    this.events.on('shutdown', () => {
+      if (this.hiddenInput && this.hiddenInput.parentNode) {
+        this.hiddenInput.parentNode.removeChild(this.hiddenInput);
+        this.hiddenInput = null;
+      }
+      if (this.cursorTimer) {
+        this.cursorTimer.destroy();
+        this.cursorTimer = null;
+      }
+      if (this.viewportHandler && window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', this.viewportHandler);
+      }
     });
 
     // Network callbacks
@@ -177,6 +261,14 @@ export class LobbyScene extends Phaser.Scene {
   startMultiplayerGame(msg) {
     this.registry.set('gameStartData', msg);
     this.scene.start('MultiplayerGame');
+  }
+
+  updateInputDisplay() {
+    if (!this.hiddenInput) return;
+    const val = this.hiddenInput.value;
+    const isFocused = document.activeElement === this.hiddenInput;
+    const cursor = (isFocused && this.cursorVisible) ? '|' : '';
+    this.ipInput.setText(val + cursor);
   }
 
   createButton(x, y, text, color, onClick) {
