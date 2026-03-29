@@ -683,11 +683,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   onBossTime() {
-    // Stop spawning regular enemies and clear the field
+    // Stop spawning new enemies but keep existing ones alive
     this.spawnSystem.stopped = true;
-    this.enemies.getChildren().forEach((enemy) => {
-      if (enemy.active) enemy.die();
-    });
 
     // Flash warning text
     const cam = this.cameras.main;
