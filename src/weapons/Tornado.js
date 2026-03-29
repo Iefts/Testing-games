@@ -15,15 +15,36 @@ export class Tornado {
   updateStats(stats) {
     this.damage = stats.damage;
     this.speed = stats.speed;
-    this.duration = stats.duration;
-    this.cooldown = stats.cooldown;
+    if (this.activeTornado) {
+      this.activeTornado.damage = stats.damage;
+    }
   }
 
   update(time) {
-    if (time < this.lastFired + this.cooldown) return;
-    if (this.activeTornado) return; // only one at a time
-    this.lastFired = time;
-    this.spawn();
+    // Spawn a permanent tornado on first update
+    if (!this.activeTornado) {
+      this.spawn();
+    }
+
+    // Keep tornado near the player's screen area
+    if (this.activeTornado && this.activeTornado.active) {
+      const cam = this.scene.cameras.main;
+      const t = this.activeTornado;
+      const margin = 40;
+      const left = cam.worldView.x - margin;
+      const right = cam.worldView.x + cam.worldView.width + margin;
+      const top = cam.worldView.y - margin;
+      const bottom = cam.worldView.y + cam.worldView.height + margin;
+
+      // If tornado drifted too far off screen, teleport it back nearby
+      if (t.x < left || t.x > right || t.y < top || t.y > bottom) {
+        t.setPosition(
+          this.player.x + Phaser.Math.Between(-60, 60),
+          this.player.y + Phaser.Math.Between(-60, 60)
+        );
+        this.pickWanderTarget(t);
+      }
+    }
   }
 
   spawn() {
@@ -81,27 +102,6 @@ export class Tornado {
     tornado.updateEvent = updateEvent;
 
     this.scene.sound.play('sfx_tornado', { volume: 0.25 });
-
-    // Fade out after duration
-    this.scene.time.delayedCall(this.duration - 500, () => {
-      if (tornado.active) {
-        this.scene.tweens.add({
-          targets: tornado,
-          alpha: 0,
-          duration: 500,
-          onComplete: () => {
-            this.destroyTornado(tornado);
-          },
-        });
-      }
-    });
-
-    // Hard cleanup fallback
-    this.scene.time.delayedCall(this.duration + 200, () => {
-      if (tornado.active) {
-        this.destroyTornado(tornado);
-      }
-    });
   }
 
   pickWanderTarget(tornado) {
@@ -160,6 +160,32 @@ export class Tornado {
           }
         }
       });
+
+      // Damage boss
+      if (this.scene.boss && this.scene.boss.active && this.scene.hitBoss) {
+        const bossDist = Phaser.Math.Distance.Between(
+          tornado.x, tornado.y,
+          this.scene.boss.x, this.scene.boss.y
+        );
+        if (bossDist < 24) {
+          const lastBossHit = tornado.hitTimes.get(this.scene.boss) || 0;
+          if (now - lastBossHit >= 500) {
+            tornado.hitTimes.set(this.scene.boss, now);
+            this.scene.hitBoss(tornado.damage, '#bbbbbb');
+          }
+        }
+      }
+
+      // Break pots
+      if (this.scene.pots) {
+        this.scene.pots.getChildren().forEach((pot) => {
+          if (!pot.active) return;
+          const dist = Phaser.Math.Distance.Between(tornado.x, tornado.y, pot.x, pot.y);
+          if (dist < 20) {
+            this.scene.breakPot(pot);
+          }
+        });
+      }
     });
   }
 }

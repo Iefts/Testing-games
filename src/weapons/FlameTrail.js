@@ -8,15 +8,14 @@ export class FlameTrail {
     this.damage = stats.damage;
     this.duration = stats.duration;
     this.spreadChance = stats.spreadChance;
-    this.lastDropTime = 0;
     this.lastX = player.x;
     this.lastY = player.y;
 
-    this.flames = scene.physics.add.group({
-      maxSize: 40,
-    });
+    // Store active flame zones for damage (physics bodies)
+    this.flameZones = [];
+    this.maxZones = 60;
 
-    // Track damage ticks per enemy per flame
+    // Track damage ticks per enemy
     this.damageCooldowns = new Map();
   }
 
@@ -28,127 +27,148 @@ export class FlameTrail {
   }
 
   update(time) {
-    if (time < this.lastDropTime + this.dropRate) return;
-
-    // Only drop if player has moved enough
     const dist = Phaser.Math.Distance.Between(
       this.player.x, this.player.y,
       this.lastX, this.lastY
     );
-    if (dist < 16) return;
 
-    this.lastDropTime = time;
-    this.lastX = this.player.x;
-    this.lastY = this.player.y;
+    // Drop lava puddles when player moves
+    if (dist >= 6) {
+      const steps = Math.ceil(dist / 6);
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const px = Phaser.Math.Linear(this.lastX, this.player.x, t);
+        const py = Phaser.Math.Linear(this.lastY, this.player.y, t);
+        this.stampPuddle(px, py, time);
+      }
 
-    this.spawnFlame(this.player.x, this.player.y, time, true);
+      this.lastX = this.player.x;
+      this.lastY = this.player.y;
+    }
+
+    // Clean up expired flame zones
+    this.cleanupZones(time);
   }
 
-  spawnFlame(x, y, time, canSpread) {
-    const flame = this.flames.get(x, y, 'flame');
-    if (!flame) return;
+  stampPuddle(x, y, time) {
+    // Lava puddle — wide and flat, sitting on the ground
+    const puddle = this.scene.add.sprite(x, y + 2, 'flame').setDepth(0);
+    puddle.setScale((1.4 + Math.random() * 0.4) * 2, 0.5 + Math.random() * 0.2);
+    puddle.setAlpha(0.9);
+    puddle.setTint(Phaser.Utils.Array.GetRandom([0xff4400, 0xff6600, 0xcc2200, 0xff8800]));
 
-    flame.setActive(true);
-    flame.setVisible(true);
-    flame.body.enable = true;
-    flame.body.setAllowGravity(false);
-    flame.body.setImmovable(true);
-    flame.setVelocity(0, 0);
-    flame.setAlpha(1);
-    flame.setDepth(0);
-    flame.damage = this.damage;
-    flame.spawnTime = time;
-    flame.canSpread = canSpread;
-    flame.hasSpread = false;
-
-    // Particle emitter for sparks
-    const particles = this.scene.add.particles(x, y, 'bullet', {
-      speed: { min: 10, max: 30 },
-      scale: { start: 0.8, end: 0 },
-      lifespan: 400,
-      quantity: 1,
-      frequency: 200,
-      tint: [0xff6600, 0xffcc00, 0xff3300],
-      angle: { min: -120, max: -60 },
-      emitting: true,
+    // Smooth fade: glow briefly then fade out
+    this.scene.tweens.add({
+      targets: puddle,
+      alpha: 0,
+      scaleX: puddle.scaleX * 0.6,
+      duration: this.duration,
+      ease: 'Sine.easeIn',
+      onComplete: () => puddle.destroy(),
     });
-    flame.particles = particles;
 
-    // Schedule spread attempt at half duration
-    if (canSpread) {
-      this.scene.time.delayedCall(this.duration / 2, () => {
-        if (flame.active && !flame.hasSpread && Math.random() < this.spreadChance) {
-          flame.hasSpread = true;
-          const angle = Math.random() * Math.PI * 2;
-          const offset = 12 + Math.random() * 4;
-          const sx = flame.x + Math.cos(angle) * offset;
-          const sy = flame.y + Math.sin(angle) * offset;
-          this.spawnFlame(sx, sy, this.scene.time.now, false); // spread flames don't spread again
-        }
+    // Spread puddles for a wider trail
+    if (Math.random() < this.spreadChance * 0.4) {
+      const angle = Math.random() * Math.PI * 2;
+      const offset = 8 + Math.random() * 10;
+      const sx = x + Math.cos(angle) * offset;
+      const sy = y + Math.sin(angle) * offset + 2;
+      const spread = this.scene.add.sprite(sx, sy, 'flame').setDepth(0);
+      spread.setScale((1.0 + Math.random() * 0.3) * 2, 0.4 + Math.random() * 0.15);
+      spread.setAlpha(0.7);
+      spread.setTint(Phaser.Utils.Array.GetRandom([0xff4400, 0xcc2200, 0xff6600]));
+      this.scene.tweens.add({
+        targets: spread,
+        alpha: 0,
+        scaleX: spread.scaleX * 0.5,
+        duration: this.duration * 0.7,
+        ease: 'Sine.easeIn',
+        onComplete: () => spread.destroy(),
       });
     }
 
-    // Fade out and recycle
-    this.scene.time.delayedCall(this.duration - 500, () => {
-      if (flame.active) {
-        this.scene.tweens.add({
-          targets: flame,
-          alpha: 0,
-          duration: 500,
-          onComplete: () => {
-            this.recycleFlame(flame);
-          },
-        });
-      }
-    });
+    // Create a damage zone (invisible physics body)
+    const zone = this.scene.add.zone(x, y, 24, 12);
+    this.scene.physics.add.existing(zone, true);
+    zone.spawnTime = time;
+    zone.flameDamage = this.damage;
+    zone.flameDuration = this.duration;
+    this.flameZones.push(zone);
 
-    // Hard cleanup fallback
-    this.scene.time.delayedCall(this.duration + 100, () => {
-      if (flame.active) {
-        this.recycleFlame(flame);
-      }
-    });
-
-    this.scene.sound.play('sfx_flameDrop', { volume: 0.15 });
+    // If we have too many zones, remove the oldest
+    if (this.flameZones.length > this.maxZones) {
+      const old = this.flameZones.shift();
+      old.destroy();
+    }
   }
 
-  recycleFlame(flame) {
-    flame.setActive(false);
-    flame.setVisible(false);
-    flame.body.enable = false;
-    if (flame.particles) {
-      flame.particles.destroy();
-      flame.particles = null;
+  cleanupZones(time) {
+    while (this.flameZones.length > 0 && time - this.flameZones[0].spawnTime > this.flameZones[0].flameDuration) {
+      const old = this.flameZones.shift();
+      old.destroy();
     }
   }
 
   setupCollision(enemies) {
-    this.scene.physics.add.overlap(
-      this.flames,
-      enemies,
-      (flame, enemy) => {
-        if (!flame.active || !enemy.active) return;
-
-        // Tick-based damage: 500ms cooldown per enemy per flame
-        const key = `${flame.x},${flame.y},${enemy.x},${enemy.y}`;
-        const now = this.scene.time.now;
-        const lastHit = this.damageCooldowns.get(key) || 0;
-        if (now - lastHit < 500) return;
-
-        this.damageCooldowns.set(key, now);
-        enemy.takeDamage(flame.damage);
-        if (this.scene.damageNumbers) {
-          this.scene.damageNumbers.show(enemy.x, enemy.y, flame.damage, '#ff6600');
-        }
-      }
-    );
-
-    // Periodically clean up old cooldown entries
     this.scene.time.addEvent({
-      delay: 5000,
+      delay: 500,
       loop: true,
       callback: () => {
-        this.damageCooldowns.clear();
+        const now = this.scene.time.now;
+        const activeEnemies = enemies.getChildren().filter(e => e.active);
+
+        for (const zone of this.flameZones) {
+          if (now - zone.spawnTime > zone.flameDuration) continue;
+
+          for (const enemy of activeEnemies) {
+            const dist = Phaser.Math.Distance.Between(zone.x, zone.y, enemy.x, enemy.y);
+            if (dist > 28) continue;
+
+            const key = enemy;
+            const lastHit = this.damageCooldowns.get(key) || 0;
+            if (now - lastHit < 500) continue;
+
+            this.damageCooldowns.set(key, now);
+            enemy.takeDamage(zone.flameDamage);
+            if (this.scene.damageNumbers) {
+              this.scene.damageNumbers.show(enemy.x, enemy.y, zone.flameDamage, '#ff6600');
+            }
+          }
+
+          // Damage boss if standing in flames
+          if (this.scene.boss && this.scene.boss.active && this.scene.hitBoss) {
+            const bossDist = Phaser.Math.Distance.Between(zone.x, zone.y, this.scene.boss.x, this.scene.boss.y);
+            if (bossDist <= 28) {
+              const bossKey = this.scene.boss;
+              const bossLastHit = this.damageCooldowns.get(bossKey) || 0;
+              if (now - bossLastHit >= 500) {
+                this.damageCooldowns.set(bossKey, now);
+                this.scene.hitBoss(zone.flameDamage, '#ff6600');
+              }
+            }
+          }
+
+          // Break pots
+          if (this.scene.pots) {
+            this.scene.pots.getChildren().forEach((pot) => {
+              if (!pot.active) return;
+              const dist = Phaser.Math.Distance.Between(zone.x, zone.y, pot.x, pot.y);
+              if (dist < 28) {
+                this.scene.breakPot(pot);
+              }
+            });
+          }
+        }
+      },
+    });
+
+    this.scene.time.addEvent({
+      delay: 3000,
+      loop: true,
+      callback: () => {
+        for (const [enemy] of this.damageCooldowns) {
+          if (!enemy.active) this.damageCooldowns.delete(enemy);
+        }
       },
     });
   }

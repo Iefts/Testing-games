@@ -35,8 +35,11 @@ export class BugSwarm {
       this.createSwarm();
     }
 
-    // Collect active enemies
+    // Collect active enemies (include boss as a targetable entity)
     const activeEnemies = enemies.getChildren().filter((e) => e.active);
+    if (this.scene.boss && this.scene.boss.active) {
+      activeEnemies.push(this.scene.boss);
+    }
 
     // Assign unique targets — no two swarms target the same enemy
     const assignedTargets = new Set();
@@ -114,12 +117,31 @@ export class BugSwarm {
           return Phaser.Math.Distance.Between(bug.x, bug.y, target.x, target.y) < 16;
         });
         if (anyClose && target.active) {
-          target.takeDamage(this.damage);
+          // Use hitBoss for boss targets, takeDamage for regular enemies
+          if (target.isBoss && this.scene.hitBoss) {
+            this.scene.hitBoss(this.damage, '#66dd44');
+          } else if (target.takeDamage) {
+            target.takeDamage(this.damage);
+          }
           if (this.scene.damageNumbers) {
             this.scene.damageNumbers.show(target.x, target.y, this.damage, '#66dd44');
           }
           swarm.lastDamageTick = now;
         }
+      }
+
+      // Break nearby pots
+      if (this.scene.pots) {
+        this.scene.pots.getChildren().forEach((pot) => {
+          if (!pot.active) return;
+          const anyBugClose = swarm.bugs.some((bug) => {
+            if (!bug.active) return false;
+            return Phaser.Math.Distance.Between(bug.x, bug.y, pot.x, pot.y) < 16;
+          });
+          if (anyBugClose) {
+            this.scene.breakPot(pot);
+          }
+        });
       }
     });
   }

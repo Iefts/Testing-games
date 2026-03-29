@@ -1,4 +1,4 @@
-import { MAP_WIDTH, MAP_HEIGHT, GAME_DURATION } from './GameConfig.js';
+import { MAP_WIDTH, MAP_HEIGHT } from './GameConfig.js';
 
 export const LEVELS = {
   plains: {
@@ -10,6 +10,11 @@ export const LEVELS = {
     obstacles: [{ type: 'tree', density: 0.02 }],
     enemyTypes: ['greenSlime'],
     spawnRate: { base: 1, scalePerMinute: 0.3 },
-    duration: GAME_DURATION,
+    duration: 300, // 5 minutes
+    bossName: 'Slime King',
+    bossSprite: 'bossSlimeKing',
+    bossHp: 2000,
+    bossDamage: 20,
+    bossSpeed: 22,
   },
 };

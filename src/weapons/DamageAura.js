@@ -55,6 +55,32 @@ export class DamageAura {
         hitAny = true;
       }
     });
+
+    // Damage boss if in range
+    if (this.scene.boss && this.scene.boss.active && this.scene.hitBoss) {
+      const bossDist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y,
+        this.scene.boss.x, this.scene.boss.y
+      );
+      if (bossDist <= this.radius) {
+        this.scene.hitBoss(this.damage, '#44aaff');
+        hitAny = true;
+      }
+    }
+    // Break pots in range
+    if (this.scene.pots) {
+      this.scene.pots.getChildren().forEach((pot) => {
+        if (!pot.active) return;
+        const dist = Phaser.Math.Distance.Between(
+          this.player.x, this.player.y,
+          pot.x, pot.y
+        );
+        if (dist <= this.radius) {
+          this.scene.breakPot(pot);
+        }
+      });
+    }
+
     if (hitAny) {
       this.scene.sound.play('sfx_auraPulse', { volume: 0.15 });
     }
