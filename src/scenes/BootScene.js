@@ -12,6 +12,8 @@ export class BootScene extends Phaser.Scene {
       fontSize: '32px',
       color: '#ffffff',
     }).setOrigin(0.5);
+
+    // StartArtwork is rendered as an HTML overlay to bypass pixelArt filtering
   }
 
   create() {
@@ -65,6 +67,110 @@ export class BootScene extends Phaser.Scene {
         { key: 'fencer_sheet', frame: 0 },
         { key: 'fencer_sheet', frame: 2 },
         { key: 'fencer_sheet', frame: 0 },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    // Set up spritesheet frames for dealer
+    const dealerTex = this.textures.get('dealer_sheet');
+    dealerTex.add(0, 0, 0, 0, 16, 16);
+    dealerTex.add(1, 0, 16, 0, 16, 16);
+    dealerTex.add(2, 0, 32, 0, 16, 16);
+    dealerTex.add(3, 0, 48, 0, 16, 16);
+
+    this.anims.create({
+      key: 'dealer_idle',
+      frames: [{ key: 'dealer_sheet', frame: 0 }],
+      frameRate: 1,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: 'dealer_walk',
+      frames: [
+        { key: 'dealer_sheet', frame: 1 },
+        { key: 'dealer_sheet', frame: 0 },
+        { key: 'dealer_sheet', frame: 2 },
+        { key: 'dealer_sheet', frame: 0 },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    // Set up spritesheet frames for blood mage
+    const bloodMageTex = this.textures.get('bloodMage_sheet');
+    bloodMageTex.add(0, 0, 0, 0, 16, 16);
+    bloodMageTex.add(1, 0, 16, 0, 16, 16);
+    bloodMageTex.add(2, 0, 32, 0, 16, 16);
+    bloodMageTex.add(3, 0, 48, 0, 16, 16);
+
+    this.anims.create({
+      key: 'bloodMage_idle',
+      frames: [{ key: 'bloodMage_sheet', frame: 0 }],
+      frameRate: 1,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: 'bloodMage_walk',
+      frames: [
+        { key: 'bloodMage_sheet', frame: 1 },
+        { key: 'bloodMage_sheet', frame: 0 },
+        { key: 'bloodMage_sheet', frame: 2 },
+        { key: 'bloodMage_sheet', frame: 0 },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    // Set up spritesheet frames for snake swordsman
+    const snakeTex = this.textures.get('snakeSwordsman_sheet');
+    snakeTex.add(0, 0, 0, 0, 16, 16);
+    snakeTex.add(1, 0, 16, 0, 16, 16);
+    snakeTex.add(2, 0, 32, 0, 16, 16);
+    snakeTex.add(3, 0, 48, 0, 16, 16);
+
+    this.anims.create({
+      key: 'snakeSwordsman_idle',
+      frames: [{ key: 'snakeSwordsman_sheet', frame: 0 }],
+      frameRate: 1,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: 'snakeSwordsman_walk',
+      frames: [
+        { key: 'snakeSwordsman_sheet', frame: 1 },
+        { key: 'snakeSwordsman_sheet', frame: 0 },
+        { key: 'snakeSwordsman_sheet', frame: 2 },
+        { key: 'snakeSwordsman_sheet', frame: 0 },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    // Set up spritesheet frames for drone pilot
+    const droneTex = this.textures.get('dronePilot_sheet');
+    droneTex.add(0, 0, 0, 0, 16, 16);
+    droneTex.add(1, 0, 16, 0, 16, 16);
+    droneTex.add(2, 0, 32, 0, 16, 16);
+    droneTex.add(3, 0, 48, 0, 16, 16);
+
+    this.anims.create({
+      key: 'dronePilot_idle',
+      frames: [{ key: 'dronePilot_sheet', frame: 0 }],
+      frameRate: 1,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: 'dronePilot_walk',
+      frames: [
+        { key: 'dronePilot_sheet', frame: 1 },
+        { key: 'dronePilot_sheet', frame: 0 },
+        { key: 'dronePilot_sheet', frame: 2 },
+        { key: 'dronePilot_sheet', frame: 0 },
       ],
       frameRate: 8,
       repeat: -1,

@@ -174,20 +174,160 @@ export function updateWeapon(player, weapon, now, room) {
     }
 
     case 'tornado': {
+      // Permanent tornado — only spawn if not already active
+      if (!weapon._tornadoId || !room.tornados.has(weapon._tornadoId)) {
+        weapon.lastFired = now;
+        const tornadoId = room.nextId++;
+        weapon._tornadoId = tornadoId;
+        const angle = Math.random() * Math.PI * 2;
+        room.tornados.set(tornadoId, {
+          id: tornadoId,
+          ownerId: player.id,
+          x: player.x + Math.cos(angle) * 40,
+          y: player.y + Math.sin(angle) * 40,
+          vx: Math.cos(angle) * weapon.speed,
+          vy: Math.sin(angle) * weapon.speed,
+          damage: weapon.damage,
+          permanent: true,
+          hitCooldowns: new Map(),
+          wanderTimer: 0,
+        });
+      } else {
+        // Update damage on existing tornado when upgraded
+        const tornado = room.tornados.get(weapon._tornadoId);
+        if (tornado) tornado.damage = weapon.damage;
+      }
+      break;
+    }
+
+    case 'cardDeck': {
+      const target = findNearestEnemy(player, room.enemies, weapon.range);
+      if (!target) return;
       weapon.lastFired = now;
-      const tornadoId = room.nextId++;
-      const angle = Math.random() * Math.PI * 2;
-      room.tornados.set(tornadoId, {
-        id: tornadoId,
-        x: player.x + Math.cos(angle) * 40,
-        y: player.y + Math.sin(angle) * 40,
+      const angle = angleBetween(player.x, player.y, target.x, target.y);
+      const projId = room.nextId++;
+      room.projectiles.set(projId, {
+        id: projId,
+        type: 'card',
+        ownerId: player.id,
+        x: player.x, y: player.y,
         vx: Math.cos(angle) * weapon.speed,
         vy: Math.sin(angle) * weapon.speed,
         damage: weapon.damage,
-        lifetime: weapon.duration,
-        hitCooldowns: new Map(),
-        wanderTimer: 0,
+        lifetime: (weapon.range / weapon.speed) * 1000,
+        pierce: false,
+        hitEnemies: new Set(),
+        rotation: angle,
       });
+      room.events.push({ type: 'weaponFired', weaponType: 'cardDeck', playerId: player.id, angle });
+      break;
+    }
+
+    case 'bloodOrb': {
+      const target = findNearestEnemy(player, room.enemies, weapon.range);
+      if (!target) return;
+      weapon.lastFired = now;
+      const angle = angleBetween(player.x, player.y, target.x, target.y);
+      const projId = room.nextId++;
+      room.projectiles.set(projId, {
+        id: projId,
+        type: 'bloodOrb',
+        ownerId: player.id,
+        x: player.x, y: player.y,
+        vx: Math.cos(angle) * weapon.bulletSpeed,
+        vy: Math.sin(angle) * weapon.bulletSpeed,
+        damage: weapon.damage,
+        lifetime: (weapon.range / weapon.bulletSpeed) * 1000,
+        pierce: false,
+        hitEnemies: new Set(),
+        rotation: angle,
+        lifeStealPercent: weapon.lifeStealPercent,
+        killHealPercent: weapon.killHealPercent,
+      });
+      room.events.push({ type: 'weaponFired', weaponType: 'bloodOrb', playerId: player.id, angle });
+      break;
+    }
+
+    case 'snakeSword': {
+      // Dual mode: slash if enemy close, poison spit if far
+      const nearest = findNearestEnemy(player, room.enemies, weapon.range);
+      if (!nearest) return;
+      const dist = distance(player.x, player.y, nearest.x, nearest.y);
+
+      if (dist <= 60) {
+        // Melee slash
+        if (now < weapon.lastSlash + weapon.slashRate) return;
+        weapon.lastSlash = now;
+        weapon.lastFired = now;
+        const angle = angleBetween(player.x, player.y, nearest.x, nearest.y);
+        for (const [eid, enemy] of room.enemies) {
+          if (!enemy.alive) continue;
+          const eDist = distance(player.x, player.y, enemy.x, enemy.y);
+          if (eDist > 65) continue;
+          const eAngle = angleBetween(player.x, player.y, enemy.x, enemy.y);
+          const diff = Math.abs(((angle - eAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+          if (diff < Math.PI / 3) {
+            enemy.hp -= weapon.slashDamage;
+            room.events.push({ type: 'damage', targetId: eid, amount: weapon.slashDamage, color: '#cccccc' });
+            if (enemy.hp <= 0) killEnemy(room, eid, enemy);
+          }
+        }
+        room.events.push({ type: 'weaponFired', weaponType: 'snakeSword', playerId: player.id, angle });
+      } else {
+        // Ranged poison
+        if (now < weapon.lastPoison + weapon.poisonRate) return;
+        weapon.lastPoison = now;
+        weapon.lastFired = now;
+        const angle = angleBetween(player.x, player.y, nearest.x, nearest.y);
+        const projId = room.nextId++;
+        room.projectiles.set(projId, {
+          id: projId,
+          type: 'poison',
+          ownerId: player.id,
+          x: player.x, y: player.y,
+          vx: Math.cos(angle) * weapon.poisonSpeed,
+          vy: Math.sin(angle) * weapon.poisonSpeed,
+          damage: weapon.poisonDamage,
+          lifetime: (weapon.range / weapon.poisonSpeed) * 1000,
+          pierce: false,
+          hitEnemies: new Set(),
+          rotation: angle,
+        });
+        room.events.push({ type: 'weaponFired', weaponType: 'snakeSword', playerId: player.id, angle });
+      }
+      break;
+    }
+
+    case 'laserDrones': {
+      const target = findNearestEnemy(player, room.enemies, weapon.range);
+      if (!target) return;
+      weapon.lastFired = now;
+      const angle = angleBetween(player.x, player.y, target.x, target.y);
+
+      // Instant line-based damage, piercing through N enemies
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      const hitEnemies = [];
+      for (const [eid, enemy] of room.enemies) {
+        if (!enemy.alive) continue;
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+        const proj = dx * cosA + dy * sinA;
+        if (proj < 0 || proj > weapon.range) continue;
+        const perp = Math.abs(dx * sinA - dy * cosA);
+        if (perp <= 10) {
+          hitEnemies.push({ eid, enemy, dist: proj });
+        }
+      }
+      hitEnemies.sort((a, b) => a.dist - b.dist);
+      const maxHits = weapon.pierceCount;
+      for (let i = 0; i < Math.min(hitEnemies.length, maxHits); i++) {
+        const { eid, enemy } = hitEnemies[i];
+        enemy.hp -= weapon.damage;
+        room.events.push({ type: 'damage', targetId: eid, amount: weapon.damage, color: '#ff4444' });
+        if (enemy.hp <= 0) killEnemy(room, eid, enemy);
+      }
+      room.events.push({ type: 'weaponFired', weaponType: 'laserDrones', playerId: player.id, angle });
       break;
     }
 
@@ -222,11 +362,26 @@ export function updateFlames(room, dt, now) {
 
 export function updateTornados(room, dt, now) {
   for (const [id, tornado] of room.tornados) {
-    tornado.lifetime -= dt * 1000;
-    if (tornado.lifetime <= 0) {
-      room.tornados.delete(id);
-      continue;
+    if (!tornado.permanent) {
+      tornado.lifetime -= dt * 1000;
+      if (tornado.lifetime <= 0) {
+        room.tornados.delete(id);
+        continue;
+      }
     }
+
+    // Keep permanent tornados near their owner
+    if (tornado.permanent && tornado.ownerId) {
+      const owner = room.players.get(tornado.ownerId);
+      if (owner && owner.alive) {
+        const d = distance(tornado.x, tornado.y, owner.x, owner.y);
+        if (d > 300) {
+          tornado.x = owner.x + (Math.random() - 0.5) * 120;
+          tornado.y = owner.y + (Math.random() - 0.5) * 120;
+        }
+      }
+    }
+
     // Wander: change direction periodically
     tornado.wanderTimer -= dt * 1000;
     if (tornado.wanderTimer <= 0) {

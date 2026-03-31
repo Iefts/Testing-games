@@ -7,12 +7,25 @@ export class XPSystem {
     this.xp = 0;
     this.level = 1;
     this.magnetRadius = 30;
+    this.xpMultiplier = 1;
 
     // XP gem group
     this.gems = scene.physics.add.group();
 
     // Listen for enemy kills to spawn gems
     scene.events.on('enemyKilled', this.onEnemyKilled, this);
+
+    // Physics overlap for reliable gem collection
+    scene.physics.add.overlap(
+      player,
+      this.gems,
+      (player, gem) => {
+        if (!gem.active) return;
+        this.collectGem(gem);
+      },
+      null,
+      scene
+    );
   }
 
   xpForLevel(level) {
@@ -71,7 +84,7 @@ export class XPSystem {
   }
 
   collectGem(gem) {
-    this.xp += gem.xpValue;
+    this.xp += Math.floor(gem.xpValue * this.xpMultiplier);
     gem.setActive(false);
     gem.setVisible(false);
     gem.body.enable = false;

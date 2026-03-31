@@ -1,13 +1,14 @@
 import { WebSocketServer } from 'ws';
 import os from 'os';
 import { createRoom, createPlayer, initWorld, tick, buildStateSnapshot, applyUpgradeToPlayer } from './ServerGameLoop.js';
+import { ipToRoomCode } from '../src/utils/RoomCode.js';
 
 const PORT = 3000;
 const TICK_RATE = 60;
 const BROADCAST_RATE = 60;
 const TICK_MS = 1000 / TICK_RATE;
 const BROADCAST_MS = 1000 / BROADCAST_RATE;
-const MAX_PLAYERS = 2;
+const MAX_PLAYERS = 4;
 
 const room = createRoom();
 const clients = new Map(); // ws -> { id, ready }
@@ -26,7 +27,7 @@ wss.on('connection', (ws) => {
   }
 
   if (clients.size >= MAX_PLAYERS) {
-    ws.send(JSON.stringify({ type: 'error', message: 'Room is full (max 2 players)' }));
+    ws.send(JSON.stringify({ type: 'error', message: `Room is full (max ${MAX_PLAYERS} players)` }));
     ws.close();
     return;
   }
@@ -39,7 +40,8 @@ wss.on('connection', (ws) => {
     room.hostId = playerId;
   }
 
-  ws.send(JSON.stringify({ type: 'yourId', id: playerId, isHost: playerId === room.hostId }));
+  const roomCode = playerId === room.hostId ? ipToRoomCode(getLanIP()) : undefined;
+  ws.send(JSON.stringify({ type: 'yourId', id: playerId, isHost: playerId === room.hostId, roomCode }));
   broadcastLobby();
 
   ws.on('message', (data) => {
@@ -280,9 +282,14 @@ function getLanIP() {
 }
 
 const lanIP = getLanIP();
+const serverRoomCode = ipToRoomCode(lanIP);
 console.log('========================================');
 console.log(`  Survivor Co-op Server`);
 console.log(`  WebSocket: ws://${lanIP}:${PORT}`);
-console.log(`  Share this IP with Player 2: ${lanIP}`);
+if (serverRoomCode) {
+  console.log(`  Room Code: ${serverRoomCode}`);
+} else {
+  console.log(`  Share this IP with other players: ${lanIP}`);
+}
 console.log(`  Max players: ${MAX_PLAYERS}`);
 console.log('========================================');

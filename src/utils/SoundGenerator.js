@@ -219,6 +219,100 @@ export function generateSounds(scene) {
     }
   }, 0.4);
 
+  createSound(scene, audioCtx, 'sfx_cardThrow', (ctx, buf) => {
+    // Quick whoosh/flick — card slicing through air
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 50);
+      // High-frequency swoosh
+      data[i] = env * (Math.random() * 2 - 1) * 0.25;
+      data[i] += env * Math.sin(t * 3000 * (1 - t * 8)) * 0.15;
+    }
+  }, 0.08);
+
+  createSound(scene, audioCtx, 'sfx_powerup', (ctx, buf) => {
+    // Magical pickup chime — ascending sparkle
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.min(t * 20, 1) * Math.exp(-t * 4);
+      // Ascending tone
+      const freq = 600 + t * 2000;
+      data[i] = env * Math.sin(t * freq * Math.PI * 2) * 0.2;
+      data[i] += env * Math.sin(t * freq * 1.5 * Math.PI * 2) * 0.1;
+      // Sparkle shimmer
+      data[i] += env * Math.sin(t * 4000) * 0.05 * Math.sin(t * 30);
+    }
+  }, 0.4);
+
+  createSound(scene, audioCtx, 'sfx_flamethrower', (ctx, buf) => {
+    // Sustained roaring flame
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.min(t * 10, 1) * Math.exp(-t * 1.5);
+      // Roaring noise + low rumble
+      data[i] = env * (Math.random() * 2 - 1) * 0.25;
+      data[i] *= (Math.sin(t * 15) * 0.3 + 0.7);
+      data[i] += env * Math.sin(t * 80) * 0.15;
+      data[i] += env * Math.sin(t * 200) * 0.05;
+    }
+  }, 0.6);
+
+  createSound(scene, audioCtx, 'sfx_freeze', (ctx, buf) => {
+    // Crystalline freeze burst
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 3);
+      // High shimmer tone
+      data[i] = env * Math.sin(t * 3000 * Math.PI * 2) * 0.15;
+      data[i] += env * Math.sin(t * 4500 * Math.PI * 2) * 0.1;
+      // Ice crackle
+      data[i] += env * (Math.random() * 2 - 1) * 0.1 * (t < 0.1 ? 1 : Math.exp(-(t - 0.1) * 8));
+    }
+  }, 0.5);
+
+  createSound(scene, audioCtx, 'sfx_snakeSlash', (ctx, buf) => {
+    // Quick hissing slash
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 40);
+      // Metallic slash + snake hiss
+      data[i] = env * Math.sin(t * 1200) * 0.2;
+      data[i] += env * (Math.random() * 2 - 1) * 0.2;
+      data[i] += env * Math.sin(t * 5000) * 0.05 * Math.exp(-t * 20);
+    }
+  }, 0.1);
+
+  createSound(scene, audioCtx, 'sfx_poisonSpit', (ctx, buf) => {
+    // Wet spit/squirt sound
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 15);
+      // Bubbly wet sound
+      data[i] = env * Math.sin(t * 400 * (1 + Math.sin(t * 60) * 0.3)) * 0.2;
+      data[i] += env * (Math.random() * 2 - 1) * 0.1;
+      data[i] *= (Math.sin(t * 80) * 0.3 + 0.7);
+    }
+  }, 0.15);
+
+  createSound(scene, audioCtx, 'sfx_laserZap', (ctx, buf) => {
+    // Sharp electric zap — quick high-frequency burst
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 60);
+      // High-frequency electric crackle
+      data[i] = env * Math.sin(t * 3000) * 0.2;
+      data[i] += env * Math.sin(t * 5000) * 0.1;
+      data[i] += env * (Math.random() * 2 - 1) * 0.1;
+    }
+  }, 0.08);
+
   createSound(scene, audioCtx, 'sfx_tornado', (ctx, buf) => {
     // Sustained wind whoosh
     const data = buf.getChannelData(0);

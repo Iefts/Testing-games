@@ -1,8 +1,11 @@
+import { roomCodeToIP } from '../utils/RoomCode.js';
+
 export class NetworkManager {
   constructor() {
     this.ws = null;
     this.myId = null;
     this.isHost = false;
+    this.roomCode = null;
     this.connected = false;
     this.latestState = null;
     this.eventQueue = [];
@@ -59,6 +62,7 @@ export class NetworkManager {
       case 'yourId':
         this.myId = msg.id;
         this.isHost = msg.isHost;
+        this.roomCode = msg.roomCode || null;
         break;
 
       case 'lobbyState':
@@ -123,6 +127,12 @@ export class NetworkManager {
 
   sendStartGame() {
     this.send({ type: 'startGame' });
+  }
+
+  connectWithCode(code, port = 3000) {
+    const ip = roomCodeToIP(code);
+    if (!ip) return Promise.reject(new Error('Invalid room code'));
+    return this.connect(ip, port);
   }
 
   sendInput(x, y) {

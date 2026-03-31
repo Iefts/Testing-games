@@ -5,8 +5,8 @@ export class Revolver extends Weapon {
     super(scene, player, {
       fireRate: 600,
       damage: 5,
-      bulletSpeed: 300,
-      range: 300,
+      bulletSpeed: 250,
+      range: 150,
       bulletKey: 'bullet',
       maxBullets: 30,
     });

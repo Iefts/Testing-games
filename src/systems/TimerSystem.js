@@ -1,36 +1,35 @@
-import { GAME_DURATION } from '../config/GameConfig.js';
-
 export class TimerSystem {
-  constructor(scene) {
+  constructor(scene, duration) {
     this.scene = scene;
-    this.remainingSeconds = GAME_DURATION;
+    this.duration = duration;
     this.elapsed = 0;
     this.running = true;
+    this.bossTriggered = false;
   }
 
   get elapsedSeconds() {
-    return GAME_DURATION - this.remainingSeconds;
+    return this.elapsed;
   }
 
   get elapsedMinutes() {
-    return this.elapsedSeconds / 60;
+    return this.elapsed / 60;
   }
 
   get timeString() {
-    const mins = Math.floor(this.remainingSeconds / 60);
-    const secs = Math.floor(this.remainingSeconds % 60);
+    const mins = Math.floor(this.elapsed / 60);
+    const secs = Math.floor(this.elapsed % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
   update(delta) {
     if (!this.running) return;
 
-    this.remainingSeconds -= delta / 1000;
+    this.elapsed += delta / 1000;
 
-    if (this.remainingSeconds <= 0) {
-      this.remainingSeconds = 0;
-      this.running = false;
-      this.scene.events.emit('victory');
+    // Trigger boss spawn when duration is reached
+    if (!this.bossTriggered && this.elapsed >= this.duration) {
+      this.bossTriggered = true;
+      this.scene.events.emit('bossTime');
     }
   }
 

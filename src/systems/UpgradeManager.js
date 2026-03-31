@@ -21,19 +21,36 @@ export class UpgradeManager {
   }
 
   getRandomUpgrades(count = 3) {
-    // Build pool of available upgrades (not maxed, matching character)
+    // Count how many distinct damage and utility upgrades the player has
+    let damageCount = 0;
+    let utilityCount = 0;
+    Object.keys(this.acquired).forEach((id) => {
+      if (this.acquired[id] <= 0) return;
+      const upgrade = UPGRADES[id];
+      if (!upgrade) return;
+      if (upgrade.isPassive) utilityCount++;
+      else damageCount++;
+    });
+
+    // Build pool of available upgrades (not maxed, matching character, within slot limits)
     const available = [];
     Object.keys(UPGRADES).forEach((id) => {
       const upgrade = UPGRADES[id];
       // Skip character-specific upgrades that don't belong to this character
       if (upgrade.characterOnly && upgrade.characterOnly !== this.characterId) return;
-      if (this.acquired[id] < upgrade.maxLevel) {
-        available.push({
-          ...upgrade,
-          currentLevel: this.acquired[id],
-          nextLevel: this.acquired[id] + 1,
-        });
+      if (this.acquired[id] >= upgrade.maxLevel) return;
+
+      // Enforce 6 damage / 6 utility slot limit for NEW upgrades
+      if (this.acquired[id] === 0) {
+        if (upgrade.isPassive && utilityCount >= 6) return;
+        if (!upgrade.isPassive && damageCount >= 6) return;
       }
+
+      available.push({
+        ...upgrade,
+        currentLevel: this.acquired[id],
+        nextLevel: this.acquired[id] + 1,
+      });
     });
 
     // Shuffle and pick up to count

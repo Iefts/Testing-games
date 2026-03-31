@@ -19,6 +19,21 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       (16 - config.colliderRadius * 2) / 2,
       (16 - config.colliderRadius * 2) / 2
     );
+
+    if (config.scale) {
+      this.setScale(config.scale);
+    }
+
+    // Ranged enemy properties
+    this.ranged = config.ranged || false;
+    this.attackRange = config.attackRange || 120;
+    this.projectileSpeed = config.projectileSpeed || 100;
+    this.fireRate = config.fireRate || 2000;
+    this.lastFired = 0;
+
+    // Movement pattern
+    this.movementPattern = config.movementPattern || 'direct';
+    this.moveTimer = 0;
   }
 
   spawn(x, y, healthMultiplier) {
@@ -26,25 +41,100 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setActive(true);
     this.setVisible(true);
     this.body.enable = true;
+    this.clearTint();
 
     this.hp = Math.floor(this.config.baseHp * healthMultiplier);
     this.maxHp = this.hp;
+
+    if (this.config.scale) {
+      this.setScale(this.config.scale);
+    }
   }
 
-  moveToward(targetX, targetY) {
-    const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-    this.setVelocity(
-      Math.cos(angle) * this.speed,
-      Math.sin(angle) * this.speed
-    );
+  moveToward(targetX, targetY, delta) {
+    if (this.ranged) {
+      const dist = Phaser.Math.Distance.Between(this.x, this.y, targetX, targetY);
+      if (dist <= this.attackRange) {
+        this.setVelocity(0, 0);
+        return;
+      }
+      const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
+      this.setVelocity(
+        Math.cos(angle) * this.speed,
+        Math.sin(angle) * this.speed
+      );
+      return;
+    }
+
+    this.moveTimer += (delta || 16);
+    const baseAngle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
+
+    switch (this.movementPattern) {
+      case 'skitter': {
+        // Zigzag approach with sine-wave lateral wobble
+        const wobble = Math.sin(this.moveTimer * 0.008) * 0.7;
+        const angle = baseAngle + wobble;
+        this.setVelocity(
+          Math.cos(angle) * this.speed,
+          Math.sin(angle) * this.speed
+        );
+        break;
+      }
+      case 'shuffle': {
+        // Lurching movement with brief pauses and slight sway
+        const cycle = this.moveTimer % 800;
+        if (cycle < 150) {
+          this.setVelocity(0, 0);
+        } else {
+          const sway = Math.sin(this.moveTimer * 0.003) * 0.15;
+          const angle = baseAngle + sway;
+          this.setVelocity(
+            Math.cos(angle) * this.speed,
+            Math.sin(angle) * this.speed
+          );
+        }
+        break;
+      }
+      case 'lumber': {
+        // Stomp-stop-stomp with long pauses
+        const cycle = this.moveTimer % 2500;
+        if (cycle > 2000) {
+          this.setVelocity(0, 0);
+        } else {
+          this.setVelocity(
+            Math.cos(baseAngle) * this.speed,
+            Math.sin(baseAngle) * this.speed
+          );
+        }
+        break;
+      }
+      default: {
+        // Direct pursuit (slimes etc.)
+        this.setVelocity(
+          Math.cos(baseAngle) * this.speed,
+          Math.sin(baseAngle) * this.speed
+        );
+        break;
+      }
+    }
+  }
+
+  tryShoot(targetX, targetY, time) {
+    if (!this.ranged || !this.active) return false;
+    const dist = Phaser.Math.Distance.Between(this.x, this.y, targetX, targetY);
+    if (dist > this.attackRange) return false;
+    if (time < this.lastFired + this.fireRate) return false;
+
+    this.lastFired = time;
+    return true;
   }
 
   takeDamage(amount) {
     this.hp -= amount;
 
     // Flash white on hit
-    this.setTint(0xffffff);
-    this.scene.time.delayedCall(60, () => {
+    this.setTintFill(0xffffff);
+    this.scene.time.delayedCall(150, () => {
       if (this.active) this.clearTint();
     });
 

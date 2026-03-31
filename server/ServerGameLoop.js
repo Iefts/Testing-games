@@ -34,8 +34,8 @@ export function createPlayer(room, id, characterId) {
   const player = {
     id,
     characterId,
-    x: MAP_WIDTH / 2 + (room.players.size === 0 ? -30 : 30),
-    y: MAP_HEIGHT / 2,
+    x: MAP_WIDTH / 2 + [-40, 40, -40, 40][room.players.size % 4],
+    y: MAP_HEIGHT / 2 + [-20, -20, 20, 20][room.players.size % 4],
     hp: config.hp,
     maxHp: config.hp,
     speed: config.speed,
@@ -58,23 +58,20 @@ export function createPlayer(room, id, characterId) {
 }
 
 function getStartingWeapon(charConfig) {
-  if (charConfig.startingWeapon === 'rapier') {
-    return {
-      type: 'rapier',
-      fireRate: 900,
-      damage: 15,
-      range: 80,
-      lastFired: 0,
-    };
+  switch (charConfig.startingWeapon) {
+    case 'rapier':
+      return { type: 'rapier', fireRate: 900, damage: 15, range: 80, lastFired: 0 };
+    case 'cardDeck':
+      return { type: 'cardDeck', fireRate: 800, damage: 6, speed: 220, range: 140, lastFired: 0 };
+    case 'bloodOrb':
+      return { type: 'bloodOrb', fireRate: 900, damage: 8, bulletSpeed: 180, range: 140, lifeStealPercent: 0.15, killHealPercent: 0.05, lastFired: 0 };
+    case 'snakeSword':
+      return { type: 'snakeSword', slashRate: 650, slashDamage: 10, poisonRate: 1000, poisonDamage: 5, poisonSpeed: 170, range: 150, lastSlash: 0, lastPoison: 0, lastFired: 0 };
+    case 'laserDrones':
+      return { type: 'laserDrones', fireRate: 2000, damage: 20, range: 170, pierceCount: 1, lastFired: 0, lastDrone: 0 };
+    default:
+      return { type: 'revolver', fireRate: 600, damage: 5, bulletSpeed: 300, range: 300, lastFired: 0 };
   }
-  return {
-    type: 'revolver',
-    fireRate: 600,
-    damage: 5,
-    bulletSpeed: 300,
-    range: 300,
-    lastFired: 0,
-  };
 }
 
 export function initWorld(room) {
@@ -161,6 +158,19 @@ export function tick(room, dt, now) {
     }
   }
 
+  // Passive heal over time (all characters except Blood Mage)
+  if (!room._lastHealTick) room._lastHealTick = 0;
+  if (now - room._lastHealTick >= 2000) {
+    room._lastHealTick = now;
+    for (const [id, player] of room.players) {
+      if (!player.alive) continue;
+      if (player.characterId === 'bloodMage') continue;
+      if (player.hp < player.maxHp) {
+        player.hp = Math.min(player.hp + 1, player.maxHp);
+      }
+    }
+  }
+
   // Enemy AI
   const alivePlayers = [...room.players.values()].filter((p) => p.alive);
   for (const [id, enemy] of room.enemies) {
@@ -208,13 +218,32 @@ export function tick(room, dt, now) {
       if (proj.pierce && proj.hitEnemies.has(eid)) continue;
       if (distance(proj.x, proj.y, enemy.x, enemy.y) < 12) {
         enemy.hp -= proj.damage;
-        room.events.push({ type: 'damage', targetId: eid, amount: proj.damage, color: proj.type === 'bullet' ? '#ffcc44' : '#cccccc' });
+        const color = proj.type === 'bullet' ? '#ffcc44' : proj.type === 'bloodOrb' ? '#cc2244' : proj.type === 'poison' ? '#44ff44' : '#cccccc';
+        room.events.push({ type: 'damage', targetId: eid, amount: proj.damage, color });
+
+        // Blood orb life steal
+        if (proj.type === 'bloodOrb' && proj.lifeStealPercent) {
+          const owner = room.players.get(proj.ownerId);
+          if (owner && owner.alive) {
+            const heal = Math.ceil(proj.damage * proj.lifeStealPercent);
+            owner.hp = Math.min(owner.maxHp, owner.hp + heal);
+          }
+        }
+
         if (proj.pierce) {
           proj.hitEnemies.add(eid);
         } else {
           room.projectiles.delete(projId);
         }
         if (enemy.hp <= 0) {
+          // Blood orb kill heal
+          if (proj.type === 'bloodOrb' && proj.killHealPercent) {
+            const owner = room.players.get(proj.ownerId);
+            if (owner && owner.alive) {
+              const heal = Math.ceil(owner.maxHp * proj.killHealPercent);
+              owner.hp = Math.min(owner.maxHp, owner.hp + heal);
+            }
+          }
           killEnemy(room, eid, enemy);
         }
         if (!proj.pierce) break;
@@ -297,6 +326,18 @@ export function tick(room, dt, now) {
         player.hp = Math.min(player.maxHp, player.hp + healAmount);
         room.healthPotions.delete(potionId);
         room.events.push({ type: 'healthPickup', playerId: pid, amount: healAmount });
+        break;
+      }
+    }
+  }
+
+  // Player walks over pots to break them
+  for (const pot of room.pots) {
+    if (!pot.alive) continue;
+    for (const [pid, player] of room.players) {
+      if (!player.alive) continue;
+      if (distance(player.x, player.y, pot.x, pot.y) < 12) {
+        breakPot(room, pot, now);
         break;
       }
     }
@@ -389,7 +430,7 @@ function applySingleUpgrade(room, player, upgradeId) {
   const charConfig = CHARACTERS[player.characterId];
 
   // Starting weapon upgrades
-  if (upgradeId === 'revolverUp' || upgradeId === 'rapierUp') {
+  if (['revolverUp', 'rapierUp', 'cardDeckUp', 'bloodOrbUp', 'snakeSwordUp', 'laserDronesUp'].includes(upgradeId)) {
     const startWeapon = player.weapons[0];
     Object.assign(startWeapon, stats);
     return;
@@ -398,6 +439,12 @@ function applySingleUpgrade(room, player, upgradeId) {
   // Passive upgrades
   if (upgradeId === 'magnetRange') {
     player.magnetRadius = stats.magnetRadius;
+    return;
+  }
+
+  if (upgradeId === 'speedBoost') {
+    const baseSpeed = CHARACTERS[player.characterId].speed;
+    player.speed = baseSpeed + stats.speedBonus;
     return;
   }
 
@@ -427,6 +474,10 @@ function getWeaponType(upgradeId) {
     flameTrail: 'flameTrail',
     tornado: 'tornado',
     bugs: 'bugSwarm',
+    cardDeckUp: 'cardDeck',
+    bloodOrbUp: 'bloodOrb',
+    snakeSwordUp: 'snakeSword',
+    laserDronesUp: 'laserDrones',
   };
   return map[upgradeId] || upgradeId;
 }

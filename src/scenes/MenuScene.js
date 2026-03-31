@@ -17,26 +17,52 @@ export class MenuScene extends Phaser.Scene {
       lineSpacing: 8,
     }).setOrigin(0.5);
 
-    // Start button
-    const startBtn = this.add.text(480, 360, 'START', {
-      fontSize: '32px',
-      color: '#44cc44',
-      fontStyle: 'bold',
-      backgroundColor: '#333355',
-      padding: { x: 40, y: 16 },
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    // Start button — HTML img overlay for full quality (bypasses pixelArt filtering)
+    const canvas = this.game.canvas;
+    const canvasRect = canvas.getBoundingClientRect();
 
-    startBtn.on('pointerover', () => {
-      startBtn.setColor('#66ee66');
-      startBtn.setBackgroundColor('#444466');
+    const startImg = document.createElement('img');
+    startImg.src = 'StartArtwork.jpg';
+    startImg.style.position = 'absolute';
+    startImg.style.width = '220px';
+    startImg.style.height = 'auto';
+    startImg.style.cursor = 'pointer';
+    startImg.style.zIndex = '10';
+    startImg.style.transition = 'transform 0.1s';
+
+    // Position relative to canvas
+    const updatePosition = () => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = rect.width / 960;
+      const scaleY = rect.height / 540;
+      const imgW = 220 * scaleX;
+      startImg.style.width = imgW + 'px';
+      startImg.style.left = (rect.left + rect.width / 2 - imgW / 2) + 'px';
+      startImg.style.top = (rect.top + 235 * scaleY) + 'px';
+    };
+
+    startImg.onload = updatePosition;
+    window.addEventListener('resize', updatePosition);
+
+    startImg.addEventListener('mouseenter', () => {
+      startImg.style.transform = 'scale(1.08)';
     });
-    startBtn.on('pointerout', () => {
-      startBtn.setColor('#44cc44');
-      startBtn.setBackgroundColor('#333355');
+    startImg.addEventListener('mouseleave', () => {
+      startImg.style.transform = 'scale(1.0)';
     });
-    startBtn.on('pointerdown', () => {
+    startImg.addEventListener('click', () => {
       this.sound.play('sfx_buttonClick', { volume: 0.4 });
+      startImg.remove();
+      window.removeEventListener('resize', updatePosition);
       this.scene.start('CharacterSelect');
+    });
+
+    document.body.appendChild(startImg);
+
+    // Clean up if scene is shut down without clicking
+    this.events.on('shutdown', () => {
+      startImg.remove();
+      window.removeEventListener('resize', updatePosition);
     });
 
     // Multiplayer button

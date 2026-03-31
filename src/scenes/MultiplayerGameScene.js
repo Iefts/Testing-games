@@ -141,14 +141,19 @@ export class MultiplayerGameScene extends Phaser.Scene {
       fontSize: '16px', color: '#ffffff',
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(101);
 
-    // Partner health bar
-    this.hudPartnerBg = this.add.rectangle(800, 8, 100, 12, 0x333333)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(100).setVisible(false);
-    this.hudPartnerBar = this.add.rectangle(802, 10, 96, 8, 0x44cc44)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(101).setVisible(false);
-    this.hudPartnerLabel = this.add.text(800, 22, 'P2', {
-      fontSize: '10px', color: '#aaaaaa',
-    }).setScrollFactor(0).setDepth(101).setVisible(false);
+    // Partner health bars (up to 3 partners)
+    this.hudPartners = [];
+    for (let i = 0; i < 3; i++) {
+      const yOff = i * 32;
+      const bg = this.add.rectangle(800, 8 + yOff, 100, 12, 0x333333)
+        .setOrigin(0, 0).setScrollFactor(0).setDepth(100).setVisible(false);
+      const bar = this.add.rectangle(802, 10 + yOff, 96, 8, 0x44cc44)
+        .setOrigin(0, 0).setScrollFactor(0).setDepth(101).setVisible(false);
+      const label = this.add.text(800, 22 + yOff, '', {
+        fontSize: '10px', color: '#aaaaaa',
+      }).setScrollFactor(0).setDepth(101).setVisible(false);
+      this.hudPartners.push({ bg, bar, label });
+    }
 
     // Respawn text
     this.respawnText = this.add.text(480, 270, '', {
@@ -379,7 +384,8 @@ export class MultiplayerGameScene extends Phaser.Scene {
         let remote = this.remotePlayers.get(p.id);
         if (!remote) {
           remote = new RemotePlayer(this, p.x, p.y, p.ch);
-          remote.setPlayerName('P2');
+          const playerNum = this.remotePlayers.size + 2;
+          remote.setPlayerName(`P${playerNum}`);
           this.remotePlayers.set(p.id, remote);
         }
         remote.syncFromServer(p);
@@ -422,9 +428,15 @@ export class MultiplayerGameScene extends Phaser.Scene {
       activeIds.add(id);
       let sprite = this.projSprites.get(id);
       if (!sprite) {
-        const key = type === 'unicorn' ? 'unicorn' : type === 'dart' ? 'dart' : 'bullet';
+        let key = 'bullet';
+        if (type === 'unicorn') key = 'unicorn';
+        else if (type === 'dart') key = 'dart';
+        else if (type === 'card') key = 'card_spade';
+        else if (type === 'bloodOrb') key = 'bloodOrb';
+        else if (type === 'poison') key = 'poisonBolt';
         sprite = this.add.sprite(x, y, key).setDepth(15);
         if (type === 'unicorn') sprite.setScale(2);
+        if (type === 'poison') sprite.setTint(0x44ff44);
         this.projSprites.set(id, sprite);
       }
       sprite.x = x;
@@ -593,10 +605,17 @@ export class MultiplayerGameScene extends Phaser.Scene {
             this.sound.play('sfx_shoot', { volume: 0.3 });
           } else if (event.weaponType === 'rapier') {
             this.sound.play('sfx_rapier', { volume: 0.25 });
-            // Show rapier thrust visual
             this.showRapierThrust(event.playerId, event.angle);
           } else if (event.weaponType === 'piercingDart') {
             this.sound.play('sfx_dartFire', { volume: 0.25 });
+          } else if (event.weaponType === 'cardDeck') {
+            this.sound.play('sfx_cardThrow', { volume: 0.25 });
+          } else if (event.weaponType === 'bloodOrb') {
+            this.sound.play('sfx_shoot', { volume: 0.2 });
+          } else if (event.weaponType === 'snakeSword') {
+            this.sound.play('sfx_snakeSlash', { volume: 0.25 });
+          } else if (event.weaponType === 'laserDrones') {
+            this.sound.play('sfx_laserZap', { volume: 0.15 });
           }
           break;
         }
@@ -673,7 +692,6 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
   updateHUD(state) {
     const me = state.p?.find((p) => p.id === this.network.myId);
-    const partner = state.p?.find((p) => p.id !== this.network.myId);
 
     if (me) {
       const healthPct = me.hp / me.mhp;
@@ -692,20 +710,30 @@ export class MultiplayerGameScene extends Phaser.Scene {
       }
     }
 
-    if (partner) {
-      this.hudPartnerBg.setVisible(true);
-      this.hudPartnerBar.setVisible(true);
-      this.hudPartnerLabel.setVisible(true);
-      const pHpPct = partner.hp / partner.mhp;
-      this.hudPartnerBar.setSize(96 * Math.max(0, pHpPct), 8);
-      if (pHpPct > 0.5) this.hudPartnerBar.setFillStyle(0x44cc44);
-      else if (pHpPct > 0.25) this.hudPartnerBar.setFillStyle(0xffaa00);
-      else this.hudPartnerBar.setFillStyle(0xff3333);
+    const partners = state.p?.filter((p) => p.id !== this.network.myId) || [];
+    for (let i = 0; i < this.hudPartners.length; i++) {
+      const hud = this.hudPartners[i];
+      const partner = partners[i];
+      if (partner) {
+        hud.bg.setVisible(true);
+        hud.bar.setVisible(true);
+        hud.label.setVisible(true);
+        const pHpPct = partner.hp / partner.mhp;
+        hud.bar.setSize(96 * Math.max(0, pHpPct), 8);
+        if (pHpPct > 0.5) hud.bar.setFillStyle(0x44cc44);
+        else if (pHpPct > 0.25) hud.bar.setFillStyle(0xffaa00);
+        else hud.bar.setFillStyle(0xff3333);
 
-      if (!partner.alive) {
-        this.hudPartnerLabel.setText(`P2 (dead - ${partner.rt}s)`);
+        const pLabel = `P${i + 2}`;
+        if (!partner.alive) {
+          hud.label.setText(`${pLabel} (dead - ${partner.rt}s)`);
+        } else {
+          hud.label.setText(pLabel);
+        }
       } else {
-        this.hudPartnerLabel.setText('P2');
+        hud.bg.setVisible(false);
+        hud.bar.setVisible(false);
+        hud.label.setVisible(false);
       }
     }
 

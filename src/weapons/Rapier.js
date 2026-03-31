@@ -11,7 +11,7 @@ export class Rapier extends Phaser.Physics.Arcade.Sprite {
     this.scene = scene;
     this.damage = 15;
     this.fireRate = 900;
-    this.range = 80;
+    this.range = 240;
     this.thrustDuration = 150;
     this.lastFired = 0;
     this.thrusting = false;
@@ -68,45 +68,117 @@ export class Rapier extends Phaser.Physics.Arcade.Sprite {
       target.x, target.y
     );
 
-    // Position the rapier hitbox in front of the player (scales with range)
-    const thrustDist = this.range * 0.3;
-    const tipX = this.player.x + Math.cos(angle) * thrustDist;
-    const tipY = this.player.y + Math.sin(angle) * thrustDist;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    const thrustDist = this.range * 0.5;
 
-    this.setPosition(tipX, tipY);
+    // Position the rapier visual at the midpoint of the thrust line
+    const midX = this.player.x + cosA * (thrustDist * 0.5);
+    const midY = this.player.y + sinA * (thrustDist * 0.5);
+
+    this.setPosition(midX, midY);
     this.setRotation(angle);
     this.setVisible(true);
     this.setActive(true);
-    this.body.enable = true;
+    this.body.enable = false; // We handle damage manually via line check
+
+    this.setScale(1.5);
 
     this.scene.sound.play('sfx_rapier', { volume: 0.25 });
 
-    // Track which enemies this thrust has hit
-    this.hitEnemies = new Set();
+    // Line-based damage: hit all enemies along the thrust line
+    const lineWidth = 8; // How close to the line an enemy must be to get hit
+    const hitEnemies = new Set();
 
-    // Retract after thrust duration
-    this.scene.time.delayedCall(this.thrustDuration, () => {
-      this.setVisible(false);
-      this.setActive(false);
-      this.body.enable = false;
-      this.thrusting = false;
-    });
-  }
+    this.enemyGroup.getChildren().forEach((enemy) => {
+      if (!enemy.active) return;
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+      if (dist > thrustDist + 8) return;
 
-  setupCollision(enemies) {
-    this.scene.physics.add.overlap(
-      this,
-      enemies,
-      (rapier, enemy) => {
-        if (!rapier.active || !enemy.active) return;
-        if (this.hitEnemies.has(enemy)) return;
-        this.hitEnemies.add(enemy);
+      // Project enemy position onto the thrust line
+      const dx = enemy.x - this.player.x;
+      const dy = enemy.y - this.player.y;
+      const projection = dx * cosA + dy * sinA;
+      if (projection < 0 || projection > thrustDist) return;
+
+      // Perpendicular distance from the thrust line
+      const perpDist = Math.abs(dx * sinA - dy * cosA);
+      if (perpDist <= lineWidth) {
+        hitEnemies.add(enemy);
         enemy.takeDamage(this.damage);
         if (this.scene.damageNumbers) {
           this.scene.damageNumbers.show(enemy.x, enemy.y, this.damage, '#dddddd');
         }
       }
-    );
+    });
+
+    // Check boss hit along thrust line
+    if (this.bossTarget && this.bossTarget.active && this.hitBoss) {
+      const bDist = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.bossTarget.x, this.bossTarget.y);
+      if (bDist <= thrustDist + 16) {
+        const bdx = this.bossTarget.x - this.player.x;
+        const bdy = this.bossTarget.y - this.player.y;
+        const bProj = bdx * cosA + bdy * sinA;
+        if (bProj >= 0 && bProj <= thrustDist) {
+          const bPerp = Math.abs(bdx * sinA - bdy * cosA);
+          if (bPerp <= 16) {
+            this.hitBoss(this.damage, '#dddddd');
+          }
+        }
+      }
+    }
+
+    // Thrust trail — rapier ghosts along the full line
+    const trailCount = 6;
+    for (let i = 0; i < trailCount; i++) {
+      const t = (i + 1) / (trailCount + 1);
+      const tx = this.player.x + cosA * (thrustDist * t);
+      const ty = this.player.y + sinA * (thrustDist * t);
+      const ghost = this.scene.add.image(tx, ty, 'rapier');
+      ghost.setRotation(angle);
+      ghost.setAlpha(0.6 - i * 0.08);
+      ghost.setScale(1.3);
+      ghost.setTint(0x88ccff);
+      ghost.setDepth(49);
+      this.scene.tweens.add({
+        targets: ghost,
+        alpha: 0,
+        duration: 200,
+        delay: i * 25,
+        onComplete: () => ghost.destroy(),
+      });
+    }
+
+    // Spark particles at the tip
+    const tipX = this.player.x + cosA * thrustDist;
+    const tipY = this.player.y + sinA * thrustDist;
+    const sparks = this.scene.add.particles(tipX, tipY, 'bullet', {
+      speed: { min: 40, max: 100 },
+      scale: { start: 1, end: 0 },
+      lifespan: 250,
+      quantity: 6,
+      tint: [0xffffff, 0x88ccff, 0xffd700],
+      angle: {
+        min: Phaser.Math.RadToDeg(angle) - 40,
+        max: Phaser.Math.RadToDeg(angle) + 40,
+      },
+      emitting: false,
+    });
+    sparks.explode();
+    this.scene.time.delayedCall(500, () => sparks.destroy());
+
+    // Retract after thrust duration
+    this.scene.time.delayedCall(this.thrustDuration, () => {
+      this.setVisible(false);
+      this.setActive(false);
+      this.thrusting = false;
+      this.setScale(1);
+    });
+  }
+
+  setupCollision(enemies) {
+    // Store enemy group reference for line-based damage checks in thrust()
+    this.enemyGroup = enemies;
   }
 
   updateStats(stats) {

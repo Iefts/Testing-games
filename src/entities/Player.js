@@ -18,21 +18,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setSize(10, 14);
     this.body.setOffset(3, 1);
 
-    // Health bar above player
-    this.healthBarBg = scene.add.rectangle(x, y - 10, 14, 2, 0x000000)
-      .setOrigin(0.5, 0.5).setDepth(10);
-    this.healthBarFill = scene.add.rectangle(x - 7, y - 10, 14, 2, 0x44cc44)
-      .setOrigin(0, 0.5).setDepth(11);
+    // Health bar above player (in a container so it moves with the player)
+    this.healthBarBg = scene.add.rectangle(0, -10, 14, 2, 0x000000)
+      .setOrigin(0.5, 0.5);
+    this.healthBarFill = scene.add.rectangle(-7, -10, 14, 2, 0x44cc44)
+      .setOrigin(0, 0.5);
+    this.healthBarContainer = scene.add.container(x, y, [this.healthBarBg, this.healthBarFill])
+      .setDepth(10);
 
     // Start with idle animation
     this.animPrefix = config.animPrefix || 'player';
     this.play(`${this.animPrefix}_idle`);
+
+    // Keep health bar locked to player position after physics runs
+    scene.events.on('postupdate', () => {
+      if (this.active) {
+        this.healthBarContainer.setPosition(this.x, this.y);
+      }
+    });
+  }
+
+  preUpdate(time, delta) {
+    super.preUpdate(time, delta);
   }
 
   updateHealthBar() {
     const pct = this.hp / this.maxHp;
-    this.healthBarBg.setPosition(this.x, this.y - 10);
-    this.healthBarFill.setPosition(this.x - 7, this.y - 10);
     this.healthBarFill.width = 14 * pct;
     if (pct > 0.5) {
       this.healthBarFill.setFillStyle(0x44cc44);
@@ -69,7 +80,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   takeDamage(amount) {
-    if (this.invulnerable) return;
+    if (this._godMode || this.invulnerable) return;
 
     this.hp = Math.max(0, this.hp - amount);
     this.invulnerable = true;

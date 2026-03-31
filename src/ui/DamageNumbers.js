@@ -38,5 +38,6 @@ export const DAMAGE_COLORS = {
   tornado: '#bbbbbb',
   bugs: '#66dd44',
   rapier: '#dddddd',
+  bloodOrb: '#cc2222',
   enemy: '#ff3333',
 };

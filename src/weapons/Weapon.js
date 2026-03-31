@@ -83,9 +83,12 @@ export class Weapon {
     this.scene.sound.play('sfx_shoot', { volume: 0.3 });
 
     // Auto-destroy after traveling approximately 'range' pixels
+    // Use fireId to prevent stale timers from previous pool uses
+    const fireId = Date.now() + Math.random();
+    bullet._fireId = fireId;
     const lifetime = (this.range / this.bulletSpeed) * 1000;
     this.scene.time.delayedCall(lifetime, () => {
-      if (bullet.active) {
+      if (bullet.active && bullet._fireId === fireId) {
         bullet.setActive(false);
         bullet.setVisible(false);
         bullet.body.enable = false;

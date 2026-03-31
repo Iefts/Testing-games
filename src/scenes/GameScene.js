@@ -36,13 +36,16 @@ export class GameScene extends Phaser.Scene {
     // Set world bounds
     this.physics.world.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
 
-    // Create tiled grass background
-    this.add.tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, 'grass')
+    // Create tiled background (uses level config)
+    this.levelId = this.registry.get('level') || 'plains';
+    this.levelConfig = LEVELS[this.levelId];
+    this.add.tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, this.levelConfig.tileKey)
       .setOrigin(0, 0);
 
-    // Scatter trees as obstacles
+    // Spawn obstacles based on level config
     this.trees = this.physics.add.staticGroup();
-    this.spawnTrees();
+    this.cacti = this.physics.add.staticGroup();
+    this.spawnObstacles();
 
     // Breakable pots
     this.pots = this.physics.add.group();
@@ -106,14 +109,12 @@ export class GameScene extends Phaser.Scene {
     this.upgradeManager = new UpgradeManager(this, charId);
 
     // Spawn system
-    this.spawnSystem = new SpawnSystem(this, this.player, this.enemies);
+    this.spawnSystem = new SpawnSystem(this, this.player, this.enemies, this.levelConfig);
 
     // XP system
     this.xpSystem = new XPSystem(this, this.player);
 
     // Timer system — uses level duration
-    this.levelId = this.registry.get('level') || 'plains';
-    this.levelConfig = LEVELS[this.levelId];
     this.timerSystem = new TimerSystem(this, this.levelConfig.duration);
     this.boss = null;
 
@@ -145,6 +146,18 @@ export class GameScene extends Phaser.Scene {
 
     // Collisions: player bumps into trees
     this.physics.add.collider(this.player, this.trees);
+
+    // Collisions: player bumps into cacti (blocks + damages)
+    this.physics.add.collider(this.player, this.cacti, (player, cactus) => {
+      if (!player.invulnerable) {
+        player.takeDamage(5);
+        // Knockback away from cactus
+        const angle = Phaser.Math.Angle.Between(cactus.x, cactus.y, player.x, player.y);
+        player.setVelocity(Math.cos(angle) * 150, Math.sin(angle) * 150);
+        this.damageNumbers?.show(player.x, player.y, 5, '#44aa44');
+        this.cameras.main.shake(60, 0.001);
+      }
+    }, null, this);
 
     // Collisions: player walks over pots to break them
     this.physics.add.overlap(
@@ -237,24 +250,30 @@ export class GameScene extends Phaser.Scene {
       strokeThickness: 3,
     }).setOrigin(0.5, 0).setDepth(501);
 
-    // UI camera at zoom 1 to render the stopwatch in screen-pixel space
+    // Create upgrade grid in 960x540 space (next to stopwatch)
+    this.hud.createUpgradeGrid(this, this.stopwatchBg);
+
+    // Collect all UI-camera elements (stopwatch + grid)
+    this.uiElements = new Set([this.stopwatchBg, this.stopwatchText, ...this.hud.gridElements]);
+
+    // UI camera at zoom 1 to render the stopwatch + grid in screen-pixel space
     this.uiCam = this.cameras.add(0, 0, 960, 540);
     this.uiCam.setZoom(1);
     this.uiCam.setScroll(0, 0);
 
-    // Main camera should NOT render the stopwatch elements
-    this.cameras.main.ignore([this.stopwatchBg, this.stopwatchText]);
+    // Main camera should NOT render UI elements
+    this.cameras.main.ignore([...this.uiElements]);
 
-    // UI camera should ONLY render the stopwatch elements — ignore everything else
+    // UI camera should ONLY render UI elements — ignore everything else
     this.children.list.forEach((child) => {
-      if (child !== this.stopwatchBg && child !== this.stopwatchText) {
+      if (!this.uiElements.has(child)) {
         this.uiCam.ignore(child);
       }
     });
 
-    // Also ignore future objects added to the scene
+    // Also ignore future objects added to the scene (unless marked as UI)
     this.events.on('addedtoscene', (gameObject) => {
-      if (gameObject !== this.stopwatchBg && gameObject !== this.stopwatchText) {
+      if (!this.uiElements.has(gameObject) && !gameObject._isUI) {
         if (this.uiCam) this.uiCam.ignore(gameObject);
       }
     });
@@ -277,6 +296,20 @@ export class GameScene extends Phaser.Scene {
       this.timerSystem.pause();
       this.scene.launch('Pause');
     });
+
+    // Dev menu on TAB (dev level only)
+    if (this.levelConfig.isDev) {
+      this.input.keyboard.on('keydown-TAB', (e) => {
+        e.preventDefault();
+        if (this.gameOver || this.paused) return;
+        this.paused = true;
+        this.physics.pause();
+        this.scene.launch('DevMenu');
+      });
+
+      // Stop auto-spawning in dev level — player spawns manually
+      this.spawnSystem.stopped = true;
+    }
   }
 
   update(time, delta) {
@@ -343,7 +376,7 @@ export class GameScene extends Phaser.Scene {
       if (this.activePowerup === 'freeze') {
         enemy.setVelocity(0, 0);
       } else {
-        enemy.moveToward(this.player.x, this.player.y);
+        enemy.moveToward(this.player.x, this.player.y, delta);
       }
     });
 
@@ -565,6 +598,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   onLevelUp(level) {
+    if (this.gameOver) return;
     const upgrades = this.upgradeManager.getRandomUpgrades(3);
     if (upgrades.length === 0) return;
 
@@ -611,6 +645,11 @@ export class GameScene extends Phaser.Scene {
 
     if (upgrade.id === 'speedBoost') {
       this.player.speed = CHARACTERS[this.characterId].speed + stats.speedBonus;
+      return;
+    }
+
+    if (upgrade.id === 'xpBoost') {
+      this.xpSystem.xpMultiplier = stats.xpMultiplier;
       return;
     }
 
@@ -670,6 +709,7 @@ export class GameScene extends Phaser.Scene {
 
   onPlayerDeath() {
     this.gameOver = true;
+    this.scene.stop('LevelUp');
     this.time.delayedCall(1000, () => {
       this.scene.start('GameOver', { victory: false, stats: this.getStats() });
     });
@@ -677,14 +717,17 @@ export class GameScene extends Phaser.Scene {
 
   onVictory() {
     this.gameOver = true;
+    this.scene.stop('LevelUp');
     this.time.delayedCall(1000, () => {
       this.scene.start('GameOver', { victory: true, stats: this.getStats() });
     });
   }
 
   onBossTime() {
-    // Stop spawning new enemies but keep existing ones alive
-    this.spawnSystem.stopped = true;
+    // Stop spawning new enemies but keep existing ones alive (not in dev mode)
+    if (!this.levelConfig.isDev) {
+      this.spawnSystem.stopped = true;
+    }
 
     // Flash warning text
     const cam = this.cameras.main;
@@ -718,8 +761,8 @@ export class GameScene extends Phaser.Scene {
     const boss = this.physics.add.sprite(bx, by, this.levelConfig.bossSprite || 'slime');
     boss.setScale(3);
     boss.setDepth(20);
-    boss.body.setCircle(20);
-    boss.body.setOffset(-4, -4);
+    boss.body.setCircle(8);
+    boss.body.setOffset(0, 0);
     boss.body.setCollideWorldBounds(true);
 
     // Scale boss HP with number of weapons the player has for a proper fight
@@ -754,9 +797,13 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.shake(80, 0.003);
     }, null, this);
 
+    // Brief spawn invulnerability so overlapping projectiles don't instant-kill
+    boss._spawnInvuln = true;
+    this.time.delayedCall(500, () => { boss._spawnInvuln = false; });
+
     // Create hitBoss function and store on scene so area weapons can use it
     this.hitBoss = (damage, color) => {
-      if (!boss.active) return;
+      if (!boss.active || boss._spawnInvuln) return;
       boss.hp -= damage;
       this.damageNumbers.show(boss.x, boss.y, damage, color || '#ffffff');
 
@@ -821,7 +868,9 @@ export class GameScene extends Phaser.Scene {
 
     // Snake sword poison bolts
     if (this.startingWeapon.poisonBolts) {
-      this.physics.add.overlap(this.startingWeapon.poisonBolts, boss, (bolt) => {
+      this.physics.add.overlap(this.startingWeapon.poisonBolts, boss, (objA, objB) => {
+        // Phaser may pass (bolt, boss) or (boss, bolt) — identify which is which
+        const bolt = objA === boss ? objB : objA;
         if (!bolt.active || !boss.active) return;
         bolt.setActive(false);
         bolt.setVisible(false);
@@ -865,6 +914,14 @@ export class GameScene extends Phaser.Scene {
     boss.setVisible(false);
     boss.body.enable = false;
     boss.healthBarContainer.destroy();
+    this.boss = null;
+
+    // In dev mode, just flash and continue — no victory screen
+    if (this.levelConfig.isDev) {
+      this.cameras.main.flash(500, 255, 255, 255);
+      this.sound.play('sfx_victory', { volume: 0.5 });
+      return;
+    }
 
     // Kill all remaining enemies
     this.enemies.getChildren().forEach((enemy) => {
@@ -898,6 +955,7 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5).setScrollFactor(0).setDepth(301);
 
     this.gameOver = true;
+    this.scene.stop('LevelUp');
 
     this.time.delayedCall(3000, () => {
       this.scene.start('GameOver', {
@@ -1008,23 +1066,33 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  spawnTrees() {
-    const treeCount = Math.floor(MAP_WIDTH * MAP_HEIGHT * 0.00002);
+  spawnObstacles() {
     const playerX = MAP_WIDTH / 2;
     const playerY = MAP_HEIGHT / 2;
+    const obstacles = this.levelConfig.obstacles || [];
 
-    for (let i = 0; i < treeCount; i++) {
-      const x = Phaser.Math.Between(40, MAP_WIDTH - 40);
-      const y = Phaser.Math.Between(40, MAP_HEIGHT - 40);
+    for (const obstacleDef of obstacles) {
+      const count = Math.floor(MAP_WIDTH * MAP_HEIGHT * (obstacleDef.density || 0.00002));
 
-      // Don't spawn trees too close to player start
-      const dist = Phaser.Math.Distance.Between(x, y, playerX, playerY);
-      if (dist < 160) continue;
+      for (let i = 0; i < count; i++) {
+        const x = Phaser.Math.Between(40, MAP_WIDTH - 40);
+        const y = Phaser.Math.Between(40, MAP_HEIGHT - 40);
 
-      const tree = this.trees.create(x, y, 'tree');
-      tree.body.setSize(8, 6);
-      tree.body.setOffset(4, 18);
-      tree.setDepth(y); // Trees in front overlap those behind
+        const dist = Phaser.Math.Distance.Between(x, y, playerX, playerY);
+        if (dist < 160) continue;
+
+        if (obstacleDef.type === 'tree') {
+          const tree = this.trees.create(x, y, 'tree');
+          tree.body.setSize(8, 6);
+          tree.body.setOffset(4, 18);
+          tree.setDepth(y);
+        } else if (obstacleDef.type === 'cactus') {
+          const cactus = this.cacti.create(x, y, 'cactus');
+          cactus.body.setSize(8, 6);
+          cactus.body.setOffset(4, 18);
+          cactus.setDepth(y);
+        }
+      }
     }
   }
 }
