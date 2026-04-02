@@ -10,6 +10,8 @@ import { PauseScene } from './scenes/PauseScene.js';
 import { LobbyScene } from './scenes/LobbyScene.js';
 import { MultiplayerGameScene } from './scenes/MultiplayerGameScene.js';
 import { DevMenuScene } from './scenes/DevMenuScene.js';
+import { ShopScene } from './scenes/ShopScene.js';
+import { PostGameScene } from './scenes/PostGameScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -38,6 +40,8 @@ const config = {
     LobbyScene,
     MultiplayerGameScene,
     DevMenuScene,
+    ShopScene,
+    PostGameScene,
   ],
 };
 

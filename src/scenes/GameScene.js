@@ -23,6 +23,8 @@ import { SnakeSword } from '../weapons/SnakeSword.js';
 import { LaserDrones } from '../weapons/LaserDrones.js';
 import { HUD } from '../ui/HUD.js';
 import { DamageNumbers, DAMAGE_COLORS } from '../ui/DamageNumbers.js';
+import { SaveSystem } from '../systems/SaveSystem.js';
+import { COSMETICS } from '../config/Cosmetics.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -64,8 +66,19 @@ export class GameScene extends Phaser.Scene {
 
     // Create player at center of map
     const charId = this.registry.get('character') || 'human';
-    const charConfig = CHARACTERS[charId];
+    const charConfig = { ...CHARACTERS[charId] };
     this.characterId = charId;
+
+    // Apply palette cosmetic if equipped
+    const equippedCos = SaveSystem.getEquippedCosmetic(charId);
+    if (equippedCos) {
+      const cosData = COSMETICS[equippedCos];
+      if (cosData && cosData.type === 'palette' && this.textures.exists(cosData.sheetKey)) {
+        charConfig.spriteSheet = cosData.sheetKey;
+        charConfig.animPrefix = cosData.animPrefix;
+      }
+    }
+
     this.player = new Player(this, MAP_WIDTH / 2, MAP_HEIGHT / 2, charConfig);
 
     // Input manager
@@ -106,6 +119,25 @@ export class GameScene extends Phaser.Scene {
       this.startingWeapon = new Revolver(this, this.player);
     }
     this.weapons.push(this.startingWeapon);
+
+    // Cosmetic visual effects
+    this.cosmeticEffect = null;
+    const equippedCosId = SaveSystem.getEquippedCosmetic(charId);
+    if (equippedCosId) {
+      const cosmetic = COSMETICS[equippedCosId];
+      if (cosmetic && cosmetic.type === 'visual') {
+        this.cosmeticEffect = cosmetic;
+        if (cosmetic.visualType === 'aura') {
+          this.cosmeticAura = this.add.circle(0, 0, cosmetic.radius || 12, cosmetic.color, cosmetic.alpha || 0.3);
+          this.cosmeticAura.setDepth(this.player.depth - 1);
+        } else if (cosmetic.visualType === 'crown') {
+          this.cosmeticCrown = this.add.sprite(0, 0, 'crown_accessory').setScale(1).setDepth(this.player.depth + 1);
+        } else if (cosmetic.visualType === 'trail') {
+          this.cosmeticTrailTimer = 0;
+          this.cosmeticTrails = [];
+        }
+      }
+    }
 
     // Upgrade manager (pass character ID for character-specific upgrades)
     this.upgradeManager = new UpgradeManager(this, charId);
@@ -349,6 +381,32 @@ export class GameScene extends Phaser.Scene {
     // Track player facing direction for flamethrower
     if (movement.x !== 0 || movement.y !== 0) {
       this.playerFacingAngle = Math.atan2(movement.y, movement.x);
+    }
+
+    // Update cosmetic visual effects
+    if (this.cosmeticEffect) {
+      if (this.cosmeticAura) {
+        this.cosmeticAura.setPosition(this.player.x, this.player.y);
+        this.cosmeticAura.setAlpha((this.cosmeticEffect.alpha || 0.3) + Math.sin(time * 0.003) * 0.1);
+      }
+      if (this.cosmeticCrown) {
+        this.cosmeticCrown.setPosition(this.player.x, this.player.y - 12);
+      }
+      if (this.cosmeticEffect.visualType === 'trail') {
+        this.cosmeticTrailTimer += delta;
+        if (this.cosmeticTrailTimer > 80 && (movement.x !== 0 || movement.y !== 0)) {
+          this.cosmeticTrailTimer = 0;
+          const dot = this.add.circle(this.player.x, this.player.y, 2, this.cosmeticEffect.color, this.cosmeticEffect.alpha || 0.5);
+          dot.setDepth(this.player.depth - 1);
+          this.tweens.add({
+            targets: dot,
+            alpha: 0,
+            scale: 0.3,
+            duration: 400,
+            onComplete: () => dot.destroy(),
+          });
+        }
+      }
     }
 
     // Update flamethrower if active
@@ -728,6 +786,9 @@ export class GameScene extends Phaser.Scene {
       time: `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
       kills: this.killCount,
       level: this.xpSystem.level,
+      elapsedSeconds: elapsed,
+      characterId: this.registry.get('character') || 'human',
+      levelId: this.levelId,
     };
   }
 

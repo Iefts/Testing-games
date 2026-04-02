@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { SaveSystem } from '../systems/SaveSystem.js';
+import { CHARACTERS } from '../config/Characters.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -6,89 +8,221 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#1a1a2e');
+    this.cameras.main.setBackgroundColor('#0d0d1a');
 
-    // Title
-    this.add.text(480, 160, 'ROGUELIKE\nSURVIVOR', {
+    // --- Animated particle background ---
+    this.particles = [];
+    for (let i = 0; i < 40; i++) {
+      const x = Phaser.Math.Between(0, 960);
+      const y = Phaser.Math.Between(0, 540);
+      const size = Phaser.Math.Between(1, 3);
+      const alpha = 0.1 + Math.random() * 0.4;
+      const color = Phaser.Math.RND.pick([0x4444aa, 0x6644cc, 0x2266aa, 0x8844cc, 0xffffff]);
+      const particle = this.add.rectangle(x, y, size, size, color, alpha);
+      particle._vx = (Math.random() - 0.5) * 0.3;
+      particle._vy = -0.1 - Math.random() * 0.3;
+      particle._baseAlpha = alpha;
+      this.particles.push(particle);
+    }
+
+    // --- Title with glow effect ---
+    // Glow shadow (pulsing)
+    this.titleGlow = this.add.text(480, 80, 'ROGUELIKE\nSURVIVOR', {
+      fontSize: '52px',
+      color: '#4444cc',
+      fontStyle: 'bold',
+      align: 'center',
+      lineSpacing: 4,
+    }).setOrigin(0.5).setAlpha(0.3);
+
+    // Main title
+    this.add.text(480, 80, 'ROGUELIKE\nSURVIVOR', {
       fontSize: '48px',
       color: '#ffffff',
       fontStyle: 'bold',
       align: 'center',
-      lineSpacing: 8,
+      lineSpacing: 4,
     }).setOrigin(0.5);
 
-    // Start button — HTML img overlay for full quality (bypasses pixelArt filtering)
-    const canvas = this.game.canvas;
-    const canvasRect = canvas.getBoundingClientRect();
+    // Subtitle
+    this.add.text(480, 130, 'Survive the hordes', {
+      fontSize: '13px',
+      color: '#6666aa',
+    }).setOrigin(0.5);
 
-    const startImg = document.createElement('img');
-    startImg.src = 'StartArtwork.jpg';
-    startImg.style.position = 'absolute';
-    startImg.style.width = '220px';
-    startImg.style.height = 'auto';
-    startImg.style.cursor = 'pointer';
-    startImg.style.zIndex = '10';
-    startImg.style.transition = 'transform 0.1s';
+    // --- Character showcase ---
+    const unlockedChars = Object.keys(CHARACTERS).filter(id => SaveSystem.isCharacterUnlocked(id));
+    this.showcaseChars = unlockedChars;
+    this.showcaseIndex = 0;
 
-    // Position relative to canvas
-    const updatePosition = () => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = rect.width / 960;
-      const scaleY = rect.height / 540;
-      const imgW = 220 * scaleX;
-      startImg.style.width = imgW + 'px';
-      startImg.style.left = (rect.left + rect.width / 2 - imgW / 2) + 'px';
-      startImg.style.top = (rect.top + 235 * scaleY) + 'px';
-    };
+    this.showcaseBg = this.add.rectangle(480, 200, 80, 80, 0x111133, 0.5)
+      .setStrokeStyle(1, 0x333366);
 
-    startImg.onload = updatePosition;
-    window.addEventListener('resize', updatePosition);
+    this.showcaseSprite = null;
+    this.showcaseNameText = this.add.text(480, 248, '', {
+      fontSize: '11px',
+      color: '#8888bb',
+    }).setOrigin(0.5);
 
-    startImg.addEventListener('mouseenter', () => {
-      startImg.style.transform = 'scale(1.08)';
+    this.updateShowcase();
+
+    // Cycle characters every 3 seconds
+    this.time.addEvent({
+      delay: 3000,
+      callback: () => {
+        this.showcaseIndex = (this.showcaseIndex + 1) % this.showcaseChars.length;
+        this.updateShowcase();
+      },
+      loop: true,
     });
-    startImg.addEventListener('mouseleave', () => {
-      startImg.style.transform = 'scale(1.0)';
-    });
-    startImg.addEventListener('click', () => {
-      this.sound.play('sfx_buttonClick', { volume: 0.4 });
-      startImg.remove();
-      window.removeEventListener('resize', updatePosition);
+
+    // --- Progress bar ---
+    const barX = 280;
+    const barY = 290;
+    const barW = 400;
+    const barH = 22;
+
+    // Bar background
+    this.add.rectangle(barX + barW / 2, barY + barH / 2, barW + 4, barH + 4, 0x000000, 0.5)
+      .setStrokeStyle(2, 0x4444aa);
+    this.add.rectangle(barX, barY, barW, barH, 0x111133).setOrigin(0);
+
+    // Bar fill
+    const fill = SaveSystem.xpProgress;
+    this.progressFill = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * fill, barH - 4, 0x44aaff).setOrigin(0);
+
+    // Bar glow overlay
+    this.progressGlow = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * fill, barH - 4, 0x88ccff, 0.15).setOrigin(0);
+
+    // Level text on bar
+    this.add.text(barX - 50, barY + barH / 2, `Lv.${SaveSystem.level}`, {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    // XP text
+    const maxLevel = SaveSystem.level >= 100;
+    const xpDisplay = maxLevel ? 'MAX' : `${SaveSystem.xp} / ${SaveSystem.xpToNext}`;
+    this.add.text(barX + barW / 2, barY + barH / 2, xpDisplay, {
+      fontSize: '11px',
+      color: '#ccccff',
+    }).setOrigin(0.5);
+
+    // --- Coins display ---
+    this.add.sprite(370, 330, 'icon_coin').setScale(2);
+    this.add.text(385, 330, `${SaveSystem.coins} coins`, {
+      fontSize: '14px',
+      color: '#ddaa22',
+    }).setOrigin(0, 0.5);
+
+    // --- Buttons ---
+    // Play button
+    this.createButton(380, 390, 'PLAY', '#44ff88', '#224433', '#66ffaa', '#335544', () => {
       this.scene.start('CharacterSelect');
     });
 
-    document.body.appendChild(startImg);
-
-    // Clean up if scene is shut down without clicking
-    this.events.on('shutdown', () => {
-      startImg.remove();
-      window.removeEventListener('resize', updatePosition);
+    // Shop button
+    this.createButton(580, 390, 'SHOP', '#ffcc44', '#333322', '#ffdd66', '#444433', () => {
+      this.scene.start('Shop');
     });
 
-    // Multiplayer button
-    const mpBtn = this.add.text(480, 430, 'MULTIPLAYER', {
-      fontSize: '24px',
-      color: '#44aaff',
-      fontStyle: 'bold',
-      backgroundColor: '#333355',
-      padding: { x: 30, y: 12 },
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    // Multiplayer button (smaller)
+    this.createButton(480, 450, 'MULTIPLAYER', '#44aaff', '#222244', '#66ccff', '#333355', () => {
+      this.scene.start('Lobby');
+    }, '16px');
 
-    mpBtn.on('pointerover', () => {
-      mpBtn.setColor('#66ccff');
-      mpBtn.setBackgroundColor('#444466');
+    // --- Controls hint ---
+    this.add.text(480, 510, 'ENTER to play  |  S for shop  |  M for multiplayer', {
+      fontSize: '10px',
+      color: '#444466',
+    }).setOrigin(0.5);
+
+    // Keyboard shortcuts
+    this.input.keyboard.on('keydown-ENTER', () => {
+      this.sound.play('sfx_buttonClick', { volume: 0.4 });
+      this.scene.start('CharacterSelect');
     });
-    mpBtn.on('pointerout', () => {
-      mpBtn.setColor('#44aaff');
-      mpBtn.setBackgroundColor('#333355');
+    this.input.keyboard.on('keydown-S', () => {
+      this.sound.play('sfx_buttonClick', { volume: 0.4 });
+      this.scene.start('Shop');
     });
-    mpBtn.on('pointerdown', () => {
+    this.input.keyboard.on('keydown-M', () => {
       this.sound.play('sfx_buttonClick', { volume: 0.4 });
       this.scene.start('Lobby');
     });
 
-    this.input.keyboard.on('keydown-ENTER', () => {
-      this.scene.start('CharacterSelect');
+    // --- Title glow pulse animation ---
+    this.glowTimer = 0;
+
+    // XP boost indicator
+    if (SaveSystem.hasBoost('xp_boost')) {
+      this.add.text(480, 480, 'XP BOOST ACTIVE', {
+        fontSize: '12px',
+        color: '#66aaff',
+        fontStyle: 'bold',
+      }).setOrigin(0.5);
+    }
+  }
+
+  createButton(x, y, text, color, bgColor, hoverColor, hoverBg, onClick, fontSize = '22px') {
+    const btn = this.add.text(x, y, text, {
+      fontSize,
+      color,
+      fontStyle: 'bold',
+      backgroundColor: bgColor,
+      padding: { x: 28, y: 10 },
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    btn.on('pointerover', () => {
+      btn.setColor(hoverColor);
+      btn.setBackgroundColor(hoverBg);
+      btn.setScale(1.05);
     });
+    btn.on('pointerout', () => {
+      btn.setColor(color);
+      btn.setBackgroundColor(bgColor);
+      btn.setScale(1.0);
+    });
+    btn.on('pointerdown', () => {
+      this.sound.play('sfx_buttonClick', { volume: 0.4 });
+      onClick();
+    });
+    return btn;
+  }
+
+  updateShowcase() {
+    if (this.showcaseSprite) {
+      this.showcaseSprite.destroy();
+    }
+    const charId = this.showcaseChars[this.showcaseIndex];
+    const char = CHARACTERS[charId];
+    if (!char) return;
+
+    this.showcaseSprite = this.add.sprite(480, 200, char.spriteSheet, 0)
+      .setScale(5)
+      .setDepth(5);
+    this.showcaseSprite.play(`${char.animPrefix}_walk`);
+    this.showcaseNameText.setText(char.name);
+  }
+
+  update(time, delta) {
+    // Animate particles
+    for (const p of this.particles) {
+      p.x += p._vx;
+      p.y += p._vy;
+      if (p.y < -5) p.y = 545;
+      if (p.x < -5) p.x = 965;
+      if (p.x > 965) p.x = -5;
+      p.alpha = p._baseAlpha + Math.sin(time * 0.002 + p.x) * 0.15;
+    }
+
+    // Pulse title glow
+    this.glowTimer += delta * 0.002;
+    const glowAlpha = 0.15 + Math.sin(this.glowTimer) * 0.15;
+    this.titleGlow.setAlpha(glowAlpha);
+
+    // Pulse progress bar glow
+    this.progressGlow.setAlpha(0.1 + Math.sin(this.glowTimer * 1.5) * 0.1);
   }
 }

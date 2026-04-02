@@ -50,6 +50,12 @@ export function generateSprites(scene) {
   generateVoidPhantom(scene);
   generateSentinelDrone(scene);
   generateBossLunarOverlord(scene);
+  generateCoinIcon(scene);
+  generateXPBoostIcon(scene);
+  generateCosmeticIcon(scene);
+  generateLockIcon(scene);
+  generateCrownAccessory(scene);
+  generatePaletteSwaps(scene);
 }
 
 function generatePlayer(scene) {
@@ -3449,4 +3455,202 @@ function generateBossLunarOverlord(scene) {
 
   gfx.generateTexture('bossLunarOverlord', 16, 16);
   gfx.destroy();
+}
+
+function generateCoinIcon(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 12x12 golden coin
+
+  // Dark outline
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(3, 1, 6, 10);
+  gfx.fillRect(2, 2, 8, 8);
+  gfx.fillRect(1, 3, 10, 6);
+
+  // Gold body
+  gfx.fillStyle(0xddaa22);
+  gfx.fillRect(3, 2, 6, 8);
+  gfx.fillRect(2, 3, 8, 6);
+
+  // Highlight
+  gfx.fillStyle(0xffcc44);
+  gfx.fillRect(3, 3, 4, 4);
+  gfx.fillRect(4, 2, 3, 1);
+
+  // Bright shine
+  gfx.fillStyle(0xffee88);
+  gfx.fillRect(4, 3, 2, 2);
+
+  // Shadow
+  gfx.fillStyle(0xbb8811);
+  gfx.fillRect(7, 6, 2, 2);
+  gfx.fillRect(3, 8, 5, 1);
+
+  // Dollar sign
+  gfx.fillStyle(0x997711);
+  gfx.fillRect(5, 3, 2, 1);
+  gfx.fillRect(4, 4, 1, 1);
+  gfx.fillRect(5, 5, 2, 1);
+  gfx.fillRect(7, 6, 1, 1);
+  gfx.fillRect(5, 7, 2, 1);
+
+  gfx.generateTexture('icon_coin', 12, 12);
+  gfx.destroy();
+}
+
+function generateXPBoostIcon(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 12x12 blue arrow up icon
+
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(2, 0, 8, 12);
+
+  // Arrow body
+  gfx.fillStyle(0x4488ff);
+  gfx.fillRect(4, 4, 4, 7);
+
+  // Arrow head
+  gfx.fillStyle(0x4488ff);
+  gfx.fillRect(3, 3, 6, 2);
+  gfx.fillRect(4, 2, 4, 1);
+  gfx.fillRect(5, 1, 2, 1);
+
+  // Highlight
+  gfx.fillStyle(0x66aaff);
+  gfx.fillRect(5, 2, 1, 4);
+  gfx.fillRect(4, 3, 1, 2);
+
+  gfx.generateTexture('icon_xpboost', 12, 12);
+  gfx.destroy();
+}
+
+function generateCosmeticIcon(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 12x12 sparkle/star icon
+
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(5, 0, 2, 12);
+  gfx.fillRect(0, 5, 12, 2);
+
+  // Star arms
+  gfx.fillStyle(0xffaa44);
+  gfx.fillRect(5, 1, 2, 10);
+  gfx.fillRect(1, 5, 10, 2);
+
+  // Diagonal
+  gfx.fillStyle(0xffaa44);
+  gfx.fillRect(3, 3, 2, 2);
+  gfx.fillRect(7, 3, 2, 2);
+  gfx.fillRect(3, 7, 2, 2);
+  gfx.fillRect(7, 7, 2, 2);
+
+  // Center
+  gfx.fillStyle(0xffdd88);
+  gfx.fillRect(4, 4, 4, 4);
+
+  // Bright center
+  gfx.fillStyle(0xffeebb);
+  gfx.fillRect(5, 5, 2, 2);
+
+  gfx.generateTexture('icon_cosmetic', 12, 12);
+  gfx.destroy();
+}
+
+function generateLockIcon(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 12x12 lock icon
+
+  // Shackle
+  gfx.fillStyle(0x888888);
+  gfx.fillRect(3, 1, 6, 5);
+  gfx.fillStyle(0x1a1a2e);
+  gfx.fillRect(4, 2, 4, 3);
+
+  // Lock body
+  gfx.fillStyle(0xaaaa44);
+  gfx.fillRect(2, 5, 8, 6);
+
+  // Keyhole
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(5, 7, 2, 1);
+  gfx.fillRect(5, 8, 2, 2);
+
+  // Highlight
+  gfx.fillStyle(0xcccc66);
+  gfx.fillRect(3, 5, 3, 2);
+
+  gfx.generateTexture('icon_lock', 12, 12);
+  gfx.destroy();
+}
+
+function generateCrownAccessory(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 8x5 small crown for Royal Dealer cosmetic
+
+  gfx.fillStyle(0xffcc00);
+  gfx.fillRect(0, 2, 8, 3);
+  gfx.fillRect(0, 1, 2, 1);
+  gfx.fillRect(3, 0, 2, 2);
+  gfx.fillRect(6, 1, 2, 1);
+
+  // Gems
+  gfx.fillStyle(0xff2222);
+  gfx.fillRect(1, 3, 1, 1);
+  gfx.fillStyle(0x2244ff);
+  gfx.fillRect(4, 3, 1, 1);
+  gfx.fillStyle(0x22ff44);
+  gfx.fillRect(6, 3, 1, 1);
+
+  gfx.generateTexture('crown_accessory', 8, 5);
+  gfx.destroy();
+}
+
+function generatePaletteSwaps(scene) {
+  // Create tinted copies of character sprite sheets for cosmetics
+  const swaps = [
+    { src: 'player_sheet', dst: 'player_sheet_shadow', tint: 0x6633aa, singleDst: 'player_shadow' },
+    { src: 'fencer_sheet', dst: 'fencer_sheet_golden', tint: 0xddaa22, singleDst: 'fencer_golden' },
+    { src: 'dealer_sheet', dst: 'dealer_sheet_neon', tint: 0x44dddd, singleDst: 'dealer_neon' },
+    { src: 'bloodMage_sheet', dst: 'bloodMage_sheet_frost', tint: 0x66aaff, singleDst: 'bloodMage_frost' },
+    { src: 'dronePilot_sheet', dst: 'dronePilot_sheet_chrome', tint: 0xccccdd, singleDst: 'dronePilot_chrome' },
+  ];
+
+  for (const swap of swaps) {
+    const srcTex = scene.textures.get(swap.src);
+    const srcImg = srcTex.getSourceImage();
+    const w = srcImg.width;
+    const h = srcImg.height;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(srcImg, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+
+    const tr = (swap.tint >> 16) & 0xff;
+    const tg = (swap.tint >> 8) & 0xff;
+    const tb = swap.tint & 0xff;
+
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue; // skip transparent
+      // Blend original color with tint (50% mix)
+      data[i] = Math.floor(data[i] * 0.5 + tr * 0.5);
+      data[i + 1] = Math.floor(data[i + 1] * 0.5 + tg * 0.5);
+      data[i + 2] = Math.floor(data[i + 2] * 0.5 + tb * 0.5);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    scene.textures.addCanvas(swap.dst, canvas);
+
+    // Also create a single-frame version for the character select sprite
+    const singleCanvas = document.createElement('canvas');
+    singleCanvas.width = 16;
+    singleCanvas.height = 16;
+    const sCtx = singleCanvas.getContext('2d');
+    sCtx.drawImage(canvas, 0, 0, 16, 16, 0, 0, 16, 16);
+    scene.textures.addCanvas(swap.singleDst, singleCanvas);
+  }
 }

@@ -24,20 +24,20 @@ export class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const statsY = 200;
-    const stats = [
+    const statsLines = [
       `Time Survived: ${this.stats.time || '00:00'}`,
       `Enemies Killed: ${this.stats.kills || 0}`,
       `Level Reached: ${this.stats.level || 1}`,
     ];
 
-    stats.forEach((text, i) => {
+    statsLines.forEach((text, i) => {
       this.add.text(480, statsY + i * 40, text, {
         fontSize: '20px',
         color: '#cccccc',
       }).setOrigin(0.5);
     });
 
-    const menuBtn = this.add.text(480, 420, 'RETURN TO MENU', {
+    const continueBtn = this.add.text(480, 420, 'CONTINUE', {
       fontSize: '24px',
       color: '#44aaff',
       fontStyle: 'bold',
@@ -45,20 +45,30 @@ export class GameOverScene extends Phaser.Scene {
       padding: { x: 32, y: 12 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-    menuBtn.on('pointerover', () => {
-      menuBtn.setColor('#88ccff');
-      menuBtn.setBackgroundColor('#444466');
+    continueBtn.on('pointerover', () => {
+      continueBtn.setColor('#88ccff');
+      continueBtn.setBackgroundColor('#444466');
     });
-    menuBtn.on('pointerout', () => {
-      menuBtn.setColor('#44aaff');
-      menuBtn.setBackgroundColor('#333355');
+    continueBtn.on('pointerout', () => {
+      continueBtn.setColor('#44aaff');
+      continueBtn.setBackgroundColor('#333355');
     });
-    menuBtn.on('pointerdown', () => {
-      this.scene.start('Menu');
+    continueBtn.on('pointerdown', () => {
+      this.goToPostGame();
     });
 
     this.input.keyboard.on('keydown-ENTER', () => {
-      this.scene.start('Menu');
+      this.goToPostGame();
+    });
+    this.input.keyboard.on('keydown-SPACE', () => {
+      this.goToPostGame();
+    });
+  }
+
+  goToPostGame() {
+    this.scene.start('PostGame', {
+      victory: this.victory,
+      stats: this.stats,
     });
   }
 }

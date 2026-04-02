@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { generateSprites } from '../utils/SpriteGenerator.js';
 import { generateSounds } from '../utils/SoundGenerator.js';
+import { SaveSystem } from '../systems/SaveSystem.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -17,6 +18,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    SaveSystem.load();
     generateSprites(this);
 
     // Set up spritesheet frames for player
@@ -178,6 +180,44 @@ export class BootScene extends Phaser.Scene {
 
     // Generate sounds
     generateSounds(this);
+
+    // Register palette swap cosmetic animations
+    const paletteSwaps = [
+      { sheet: 'player_sheet_shadow', prefix: 'player_shadow' },
+      { sheet: 'fencer_sheet_golden', prefix: 'fencer_golden' },
+      { sheet: 'dealer_sheet_neon', prefix: 'dealer_neon' },
+      { sheet: 'bloodMage_sheet_frost', prefix: 'bloodMage_frost' },
+      { sheet: 'dronePilot_sheet_chrome', prefix: 'dronePilot_chrome' },
+    ];
+
+    for (const swap of paletteSwaps) {
+      if (!this.textures.exists(swap.sheet)) continue;
+
+      const tex = this.textures.get(swap.sheet);
+      tex.add(0, 0, 0, 0, 16, 16);
+      tex.add(1, 0, 16, 0, 16, 16);
+      tex.add(2, 0, 32, 0, 16, 16);
+      tex.add(3, 0, 48, 0, 16, 16);
+
+      this.anims.create({
+        key: `${swap.prefix}_idle`,
+        frames: [{ key: swap.sheet, frame: 0 }],
+        frameRate: 1,
+        repeat: -1,
+      });
+
+      this.anims.create({
+        key: `${swap.prefix}_walk`,
+        frames: [
+          { key: swap.sheet, frame: 1 },
+          { key: swap.sheet, frame: 0 },
+          { key: swap.sheet, frame: 2 },
+          { key: swap.sheet, frame: 0 },
+        ],
+        frameRate: 8,
+        repeat: -1,
+      });
+    }
 
     this.scene.start('Menu');
   }
