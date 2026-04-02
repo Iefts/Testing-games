@@ -129,12 +129,11 @@ export class GameScene extends Phaser.Scene {
         this.cosmeticEffect = cosmetic;
         if (cosmetic.visualType === 'aura') {
           this.cosmeticAura = this.add.circle(0, 0, cosmetic.radius || 12, cosmetic.color, cosmetic.alpha || 0.3);
-          this.cosmeticAura.setDepth(this.player.depth - 1);
+          this.cosmeticAura.setDepth(5);
         } else if (cosmetic.visualType === 'crown') {
-          this.cosmeticCrown = this.add.sprite(0, 0, 'crown_accessory').setScale(1).setDepth(this.player.depth + 1);
+          this.cosmeticCrown = this.add.sprite(0, 0, 'crown_accessory').setScale(1).setDepth(8);
         } else if (cosmetic.visualType === 'trail') {
           this.cosmeticTrailTimer = 0;
-          this.cosmeticTrails = [];
         }
       }
     }
@@ -394,15 +393,15 @@ export class GameScene extends Phaser.Scene {
       }
       if (this.cosmeticEffect.visualType === 'trail') {
         this.cosmeticTrailTimer += delta;
-        if (this.cosmeticTrailTimer > 80 && (movement.x !== 0 || movement.y !== 0)) {
+        if (this.cosmeticTrailTimer > 60 && (movement.x !== 0 || movement.y !== 0)) {
           this.cosmeticTrailTimer = 0;
-          const dot = this.add.circle(this.player.x, this.player.y, 2, this.cosmeticEffect.color, this.cosmeticEffect.alpha || 0.5);
-          dot.setDepth(this.player.depth - 1);
+          const dot = this.add.circle(this.player.x, this.player.y, 3, this.cosmeticEffect.color, this.cosmeticEffect.alpha || 0.5);
+          dot.setDepth(4);
           this.tweens.add({
             targets: dot,
             alpha: 0,
-            scale: 0.3,
-            duration: 400,
+            scale: 0.1,
+            duration: 500,
             onComplete: () => dot.destroy(),
           });
         }

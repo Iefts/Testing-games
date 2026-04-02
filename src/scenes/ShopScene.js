@@ -158,6 +158,10 @@ export class ShopScene extends Phaser.Scene {
           if (item.type === 'cosmetic') {
             SaveSystem.purchaseItem(item.id);
             SaveSystem.unlockCosmetic(item.cosmeticId);
+            // Auto-equip the cosmetic
+            if (item.characterId) {
+              SaveSystem.equipCosmetic(item.characterId, item.cosmeticId);
+            }
           } else if (item.type === 'consumable') {
             SaveSystem.addBoost(item.boostId);
           }
