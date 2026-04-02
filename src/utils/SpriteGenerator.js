@@ -38,6 +38,18 @@ export function generateSprites(scene) {
   generateMummy(scene);
   generateSandGolem(scene);
   generateBossMummyKing(scene);
+  generateWater(scene);
+  generateCoral(scene);
+  generateJellyfish(scene);
+  generateAnglerfish(scene);
+  generateSeaSerpent(scene);
+  generateBossKraken(scene);
+  generateLunar(scene);
+  generateCrater(scene);
+  generateMoonWorm(scene);
+  generateVoidPhantom(scene);
+  generateSentinelDrone(scene);
+  generateBossLunarOverlord(scene);
 }
 
 function generatePlayer(scene) {
@@ -2641,5 +2653,800 @@ function generateBossMummyKing(scene) {
   gfx.fillRect(9, 14, 3, 2);
 
   gfx.generateTexture('bossMummyKing', 16, 16);
+  gfx.destroy();
+}
+
+function generateWater(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 deep ocean tile with ripples and wave highlights
+
+  // Base deep blue
+  gfx.fillStyle(0x1a5c8a);
+  gfx.fillRect(0, 0, 16, 16);
+
+  // Darker deep water patches
+  gfx.fillStyle(0x144a70);
+  gfx.fillRect(1, 3, 4, 2);
+  gfx.fillRect(9, 7, 3, 2);
+  gfx.fillRect(5, 12, 4, 2);
+  gfx.fillRect(12, 1, 3, 2);
+  gfx.fillRect(0, 8, 2, 2);
+
+  // Dithered transition
+  gfx.fillStyle(0x144a70);
+  gfx.fillRect(5, 3, 1, 1);
+  gfx.fillRect(11, 8, 1, 1);
+  gfx.fillRect(0, 5, 1, 1);
+  gfx.fillRect(8, 12, 1, 1);
+  gfx.fillRect(13, 4, 1, 1);
+
+  // Lighter wave highlights
+  gfx.fillStyle(0x2a7aaa);
+  gfx.fillRect(6, 1, 3, 1);
+  gfx.fillRect(1, 9, 2, 1);
+  gfx.fillRect(11, 13, 3, 1);
+  gfx.fillRect(3, 6, 2, 1);
+
+  // Bright foam/ripple highlights
+  gfx.fillStyle(0x3a8abb);
+  gfx.fillRect(3, 0, 1, 1);
+  gfx.fillRect(10, 5, 1, 1);
+  gfx.fillRect(6, 10, 1, 1);
+  gfx.fillRect(14, 11, 1, 1);
+
+  // Very bright sparkle
+  gfx.fillStyle(0x55aacc);
+  gfx.fillRect(8, 2, 1, 1);
+  gfx.fillRect(2, 14, 1, 1);
+
+  gfx.generateTexture('water', 16, 16);
+  gfx.destroy();
+}
+
+function generateCoral(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x24 branching coral obstacle
+
+  // === Dark outline ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(6, 8, 4, 16);
+  gfx.fillRect(5, 10, 1, 12);
+  gfx.fillRect(10, 10, 1, 12);
+
+  // === Main trunk (coral pink) ===
+  gfx.fillStyle(0xcc4466);
+  gfx.fillRect(6, 10, 4, 14);
+  gfx.fillRect(7, 9, 2, 1);
+
+  // Trunk highlight
+  gfx.fillStyle(0xee6688);
+  gfx.fillRect(7, 11, 2, 6);
+
+  // Trunk shadow
+  gfx.fillStyle(0xaa3355);
+  gfx.fillRect(6, 18, 1, 4);
+  gfx.fillRect(9, 16, 1, 4);
+
+  // === Left branch ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(2, 6, 4, 8);
+  gfx.fillStyle(0xcc4466);
+  gfx.fillRect(3, 7, 3, 6);
+  gfx.fillStyle(0xee6688);
+  gfx.fillRect(3, 8, 2, 3);
+  // Left branch tips
+  gfx.fillStyle(0xff88aa);
+  gfx.fillRect(2, 6, 2, 1);
+  gfx.fillRect(4, 7, 1, 1);
+
+  // === Right branch ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(10, 4, 4, 10);
+  gfx.fillStyle(0xcc4466);
+  gfx.fillRect(10, 5, 3, 8);
+  gfx.fillStyle(0xee6688);
+  gfx.fillRect(11, 6, 2, 4);
+  // Right branch tips
+  gfx.fillStyle(0xff88aa);
+  gfx.fillRect(12, 4, 2, 1);
+  gfx.fillRect(10, 5, 1, 1);
+
+  // === Small polyp dots ===
+  gfx.fillStyle(0xffaacc);
+  gfx.fillRect(3, 10, 1, 1);
+  gfx.fillRect(12, 8, 1, 1);
+  gfx.fillRect(7, 14, 1, 1);
+  gfx.fillRect(8, 20, 1, 1);
+
+  // === Base rock ===
+  gfx.fillStyle(0x556666);
+  gfx.fillRect(4, 22, 8, 2);
+  gfx.fillStyle(0x667777);
+  gfx.fillRect(5, 22, 6, 1);
+
+  gfx.generateTexture('coral', 16, 24);
+  gfx.destroy();
+}
+
+function generateJellyfish(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 translucent jellyfish with dome and tentacles
+
+  // === Dark outline ===
+  gfx.fillStyle(0x1a1a2a);
+  gfx.fillRect(3, 2, 10, 1);
+  gfx.fillRect(2, 3, 1, 5);
+  gfx.fillRect(13, 3, 1, 5);
+  gfx.fillRect(3, 8, 10, 1);
+
+  // === Dome (pale blue-purple) ===
+  gfx.fillStyle(0x7777cc);
+  gfx.fillRect(3, 3, 10, 5);
+  gfx.fillRect(4, 2, 8, 1);
+
+  // Dome highlight
+  gfx.fillStyle(0x9999dd);
+  gfx.fillRect(4, 3, 4, 3);
+  gfx.fillRect(5, 2, 3, 1);
+
+  // Dome sheen
+  gfx.fillStyle(0xbbbbee);
+  gfx.fillRect(5, 3, 2, 1);
+
+  // Dome shadow
+  gfx.fillStyle(0x5555aa);
+  gfx.fillRect(10, 5, 2, 2);
+  gfx.fillRect(3, 7, 10, 1);
+
+  // === Eyes ===
+  gfx.fillStyle(0x000000);
+  gfx.fillRect(5, 5, 1, 1);
+  gfx.fillRect(9, 5, 1, 1);
+
+  // === Tentacles ===
+  gfx.fillStyle(0x8888cc);
+  gfx.fillRect(4, 9, 1, 4);
+  gfx.fillRect(6, 9, 1, 5);
+  gfx.fillRect(8, 9, 1, 4);
+  gfx.fillRect(11, 9, 1, 5);
+
+  // Tentacle tips (lighter)
+  gfx.fillStyle(0xaaaadd);
+  gfx.fillRect(4, 13, 1, 2);
+  gfx.fillRect(6, 14, 1, 2);
+  gfx.fillRect(8, 13, 1, 2);
+  gfx.fillRect(11, 14, 1, 2);
+
+  // Tentacle glow spots
+  gfx.fillStyle(0xddaaff);
+  gfx.fillRect(4, 11, 1, 1);
+  gfx.fillRect(8, 10, 1, 1);
+  gfx.fillRect(6, 12, 1, 1);
+  gfx.fillRect(11, 11, 1, 1);
+
+  gfx.generateTexture('jellyfish', 16, 16);
+  gfx.destroy();
+}
+
+function generateAnglerfish(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 anglerfish with glowing lure and large jaw
+
+  // === Dark outline ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(3, 5, 11, 9);
+  gfx.fillRect(2, 7, 1, 5);
+
+  // === Body (dark deep-sea blue) ===
+  gfx.fillStyle(0x2a2a4a);
+  gfx.fillRect(4, 6, 9, 7);
+  gfx.fillRect(3, 7, 10, 5);
+
+  // Body highlight
+  gfx.fillStyle(0x3a3a5a);
+  gfx.fillRect(5, 7, 5, 3);
+
+  // Body shadow
+  gfx.fillStyle(0x1a1a3a);
+  gfx.fillRect(4, 11, 8, 2);
+
+  // === Antenna with lure ===
+  gfx.fillStyle(0x3a3a5a);
+  gfx.fillRect(6, 3, 1, 3);
+  gfx.fillRect(5, 2, 1, 2);
+
+  // Glowing lure (bright yellow)
+  gfx.fillStyle(0xffee44);
+  gfx.fillRect(4, 1, 2, 2);
+  // Lure glow
+  gfx.fillStyle(0xffff88);
+  gfx.fillRect(4, 1, 1, 1);
+  // Outer glow
+  gfx.fillStyle(0xaaaa22);
+  gfx.fillRect(3, 1, 1, 1);
+  gfx.fillRect(6, 1, 1, 1);
+  gfx.fillRect(4, 0, 2, 1);
+  gfx.fillRect(4, 3, 1, 1);
+
+  // === Eye (red, menacing) ===
+  gfx.fillStyle(0xff2222);
+  gfx.fillRect(9, 7, 2, 2);
+  gfx.fillStyle(0x000000);
+  gfx.fillRect(10, 8, 1, 1);
+
+  // === Large jaw with teeth ===
+  gfx.fillStyle(0x1a1a3a);
+  gfx.fillRect(4, 10, 8, 2);
+
+  // Teeth (white)
+  gfx.fillStyle(0xeeeeee);
+  gfx.fillRect(4, 10, 1, 1);
+  gfx.fillRect(6, 10, 1, 1);
+  gfx.fillRect(8, 10, 1, 1);
+  gfx.fillRect(10, 10, 1, 1);
+
+  // === Tail fin ===
+  gfx.fillStyle(0x2a2a4a);
+  gfx.fillRect(13, 7, 2, 1);
+  gfx.fillRect(14, 8, 2, 2);
+  gfx.fillRect(13, 10, 2, 1);
+
+  // Fin edge
+  gfx.fillStyle(0x3a3a6a);
+  gfx.fillRect(14, 8, 1, 2);
+
+  gfx.generateTexture('anglerfish', 16, 16);
+  gfx.destroy();
+}
+
+function generateSeaSerpent(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 sea serpent — sinuous teal body with scales
+
+  // === Dark outline ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(2, 3, 12, 10);
+
+  // === Body (teal/aqua) ===
+  gfx.fillStyle(0x2288aa);
+  gfx.fillRect(3, 4, 10, 8);
+
+  // Upper body (darker)
+  gfx.fillStyle(0x1a7799);
+  gfx.fillRect(3, 4, 10, 3);
+
+  // Belly (lighter)
+  gfx.fillStyle(0x44aacc);
+  gfx.fillRect(4, 8, 8, 3);
+
+  // Body highlight
+  gfx.fillStyle(0x55bbdd);
+  gfx.fillRect(5, 9, 4, 2);
+
+  // === Scales pattern ===
+  gfx.fillStyle(0x1a6688);
+  gfx.fillRect(4, 5, 2, 1);
+  gfx.fillRect(7, 5, 2, 1);
+  gfx.fillRect(10, 5, 2, 1);
+  gfx.fillRect(5, 7, 2, 1);
+  gfx.fillRect(8, 7, 2, 1);
+
+  // === Head (pointed) ===
+  gfx.fillStyle(0x2288aa);
+  gfx.fillRect(1, 5, 2, 4);
+  gfx.fillRect(0, 6, 1, 2);
+
+  // Head highlight
+  gfx.fillStyle(0x33aacc);
+  gfx.fillRect(1, 6, 1, 2);
+
+  // === Eyes (yellow, serpentine) ===
+  gfx.fillStyle(0xffcc00);
+  gfx.fillRect(2, 5, 1, 2);
+  gfx.fillStyle(0x000000);
+  gfx.fillRect(2, 6, 1, 1);
+
+  // === Dorsal fin ===
+  gfx.fillStyle(0x1a6688);
+  gfx.fillRect(5, 3, 1, 1);
+  gfx.fillRect(7, 3, 1, 1);
+  gfx.fillRect(9, 3, 1, 1);
+  gfx.fillRect(11, 3, 1, 1);
+
+  // === Tail ===
+  gfx.fillStyle(0x2288aa);
+  gfx.fillRect(13, 5, 2, 4);
+  gfx.fillRect(14, 4, 2, 2);
+  gfx.fillRect(14, 8, 2, 2);
+
+  // Tail fin
+  gfx.fillStyle(0x1a7799);
+  gfx.fillRect(15, 4, 1, 2);
+  gfx.fillRect(15, 8, 1, 2);
+
+  gfx.generateTexture('seaSerpent', 16, 16);
+  gfx.destroy();
+}
+
+function generateBossKraken(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 kraken boss — dark purple with tentacles and angry eyes
+
+  // === Dark outline ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(2, 1, 12, 14);
+  gfx.fillRect(1, 3, 14, 10);
+
+  // === Main body (dark purple) ===
+  gfx.fillStyle(0x4a2266);
+  gfx.fillRect(3, 2, 10, 6);
+  gfx.fillRect(2, 3, 12, 4);
+
+  // Body highlight
+  gfx.fillStyle(0x663388);
+  gfx.fillRect(4, 3, 5, 3);
+  gfx.fillRect(5, 2, 3, 1);
+
+  // Body sheen
+  gfx.fillStyle(0x7744aa);
+  gfx.fillRect(5, 3, 2, 1);
+
+  // === Angry eyes (red) ===
+  gfx.fillStyle(0xff2222);
+  gfx.fillRect(4, 4, 2, 2);
+  gfx.fillRect(9, 4, 2, 2);
+
+  // Eye pupils
+  gfx.fillStyle(0x000000);
+  gfx.fillRect(5, 5, 1, 1);
+  gfx.fillRect(10, 5, 1, 1);
+
+  // Angry brow
+  gfx.fillStyle(0x2a1144);
+  gfx.fillRect(3, 3, 3, 1);
+  gfx.fillRect(9, 3, 3, 1);
+
+  // === Mouth ===
+  gfx.fillStyle(0x1a0a2a);
+  gfx.fillRect(5, 7, 6, 1);
+
+  // === Tentacles (spreading down) ===
+  gfx.fillStyle(0x4a2266);
+  // Left tentacles
+  gfx.fillRect(2, 8, 2, 4);
+  gfx.fillRect(1, 10, 1, 4);
+  gfx.fillRect(4, 9, 1, 5);
+
+  // Right tentacles
+  gfx.fillRect(12, 8, 2, 4);
+  gfx.fillRect(14, 10, 1, 4);
+  gfx.fillRect(11, 9, 1, 5);
+
+  // Center tentacles
+  gfx.fillRect(6, 8, 1, 6);
+  gfx.fillRect(8, 8, 1, 5);
+  gfx.fillRect(10, 8, 1, 6);
+
+  // Tentacle highlights
+  gfx.fillStyle(0x663388);
+  gfx.fillRect(2, 9, 1, 2);
+  gfx.fillRect(13, 9, 1, 2);
+  gfx.fillRect(6, 10, 1, 2);
+  gfx.fillRect(10, 10, 1, 2);
+
+  // Tentacle suckers
+  gfx.fillStyle(0x8855bb);
+  gfx.fillRect(1, 12, 1, 1);
+  gfx.fillRect(4, 12, 1, 1);
+  gfx.fillRect(8, 11, 1, 1);
+  gfx.fillRect(11, 12, 1, 1);
+  gfx.fillRect(14, 12, 1, 1);
+
+  // === Crown-like crest ===
+  gfx.fillStyle(0x8855bb);
+  gfx.fillRect(4, 1, 2, 1);
+  gfx.fillRect(7, 1, 2, 1);
+  gfx.fillRect(10, 1, 2, 1);
+  gfx.fillStyle(0xaa77dd);
+  gfx.fillRect(5, 1, 1, 1);
+  gfx.fillRect(8, 1, 1, 1);
+  gfx.fillRect(11, 1, 1, 1);
+
+  gfx.generateTexture('bossKraken', 16, 16);
+  gfx.destroy();
+}
+
+function generateLunar(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 lunar surface tile with craters and dust
+
+  // Base gray
+  gfx.fillStyle(0x555566);
+  gfx.fillRect(0, 0, 16, 16);
+
+  // Darker crater spots
+  gfx.fillStyle(0x444455);
+  gfx.fillRect(2, 3, 3, 2);
+  gfx.fillRect(10, 7, 3, 2);
+  gfx.fillRect(6, 12, 3, 2);
+  gfx.fillRect(13, 1, 2, 2);
+  gfx.fillRect(0, 9, 2, 2);
+
+  // Dithered transition
+  gfx.fillStyle(0x444455);
+  gfx.fillRect(5, 3, 1, 1);
+  gfx.fillRect(12, 8, 1, 1);
+  gfx.fillRect(1, 5, 1, 1);
+  gfx.fillRect(8, 12, 1, 1);
+  gfx.fillRect(14, 4, 1, 1);
+
+  // Lighter dust patches
+  gfx.fillStyle(0x666677);
+  gfx.fillRect(7, 1, 2, 1);
+  gfx.fillRect(0, 8, 2, 1);
+  gfx.fillRect(12, 13, 2, 1);
+  gfx.fillRect(4, 7, 2, 1);
+
+  // Bright highlights (mineral specks)
+  gfx.fillStyle(0x777788);
+  gfx.fillRect(3, 0, 1, 1);
+  gfx.fillRect(11, 5, 1, 1);
+  gfx.fillRect(6, 10, 1, 1);
+  gfx.fillRect(14, 11, 1, 1);
+
+  // Tiny white star specks
+  gfx.fillStyle(0x999999);
+  gfx.fillRect(1, 14, 1, 1);
+  gfx.fillRect(9, 2, 1, 1);
+  gfx.fillRect(15, 8, 1, 1);
+
+  gfx.generateTexture('lunar', 16, 16);
+  gfx.destroy();
+}
+
+function generateCrater(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x24 lunar crater obstacle — dark depression with raised rim
+
+  // === Outer rim (lighter gray) ===
+  gfx.fillStyle(0x777788);
+  gfx.fillRect(2, 10, 12, 10);
+  gfx.fillRect(3, 9, 10, 1);
+  gfx.fillRect(3, 20, 10, 1);
+  gfx.fillRect(1, 12, 1, 6);
+  gfx.fillRect(14, 12, 1, 6);
+
+  // === Rim highlight (top edge) ===
+  gfx.fillStyle(0x8888aa);
+  gfx.fillRect(4, 9, 8, 1);
+  gfx.fillRect(3, 10, 10, 1);
+
+  // === Inner crater (dark) ===
+  gfx.fillStyle(0x333344);
+  gfx.fillRect(4, 12, 8, 6);
+  gfx.fillRect(3, 13, 10, 4);
+
+  // === Deepest center ===
+  gfx.fillStyle(0x222233);
+  gfx.fillRect(5, 14, 6, 3);
+
+  // === Shadow on inner wall ===
+  gfx.fillStyle(0x444455);
+  gfx.fillRect(4, 11, 8, 1);
+  gfx.fillRect(3, 12, 1, 4);
+
+  // === Rock fragments on rim ===
+  gfx.fillStyle(0x666677);
+  gfx.fillRect(2, 11, 2, 2);
+  gfx.fillRect(12, 11, 2, 2);
+  gfx.fillRect(6, 19, 2, 2);
+  gfx.fillRect(9, 19, 2, 1);
+
+  // === Dust particles ===
+  gfx.fillStyle(0x999999);
+  gfx.fillRect(5, 10, 1, 1);
+  gfx.fillRect(10, 10, 1, 1);
+  gfx.fillRect(7, 20, 1, 1);
+
+  gfx.generateTexture('crater', 16, 24);
+  gfx.destroy();
+}
+
+function generateMoonWorm(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 pale segmented moon worm with mandibles
+
+  // === Dark outline ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(3, 5, 10, 8);
+  gfx.fillRect(2, 7, 1, 4);
+  gfx.fillRect(13, 7, 1, 4);
+
+  // === Body (pale grayish-pink) ===
+  gfx.fillStyle(0xaa8899);
+  gfx.fillRect(4, 6, 8, 6);
+  gfx.fillRect(3, 7, 10, 4);
+
+  // Body highlight
+  gfx.fillStyle(0xcc99aa);
+  gfx.fillRect(5, 7, 4, 3);
+
+  // === Segment lines ===
+  gfx.fillStyle(0x887766);
+  gfx.fillRect(5, 6, 1, 6);
+  gfx.fillRect(7, 6, 1, 6);
+  gfx.fillRect(9, 6, 1, 6);
+  gfx.fillRect(11, 6, 1, 6);
+
+  // === Head end (left) ===
+  gfx.fillStyle(0xaa8899);
+  gfx.fillRect(2, 7, 2, 4);
+  gfx.fillRect(1, 8, 1, 2);
+
+  // Head highlight
+  gfx.fillStyle(0xbb99aa);
+  gfx.fillRect(2, 8, 1, 2);
+
+  // === Mandibles ===
+  gfx.fillStyle(0x665555);
+  gfx.fillRect(0, 7, 1, 2);
+  gfx.fillRect(0, 10, 1, 2);
+
+  // Mandible tips
+  gfx.fillStyle(0x553333);
+  gfx.fillRect(0, 7, 1, 1);
+  gfx.fillRect(0, 11, 1, 1);
+
+  // === Eyes (beady black) ===
+  gfx.fillStyle(0x000000);
+  gfx.fillRect(2, 8, 1, 1);
+  gfx.fillRect(2, 10, 1, 1);
+
+  // Eye shine
+  gfx.fillStyle(0x444444);
+  gfx.fillRect(1, 8, 1, 1);
+
+  // === Tail end ===
+  gfx.fillStyle(0x997788);
+  gfx.fillRect(12, 7, 2, 4);
+  gfx.fillRect(14, 8, 1, 2);
+
+  // === Small legs ===
+  gfx.fillStyle(0x776666);
+  gfx.fillRect(4, 12, 1, 2);
+  gfx.fillRect(6, 12, 1, 2);
+  gfx.fillRect(8, 12, 1, 2);
+  gfx.fillRect(10, 12, 1, 2);
+
+  gfx.generateTexture('moonWorm', 16, 16);
+  gfx.destroy();
+}
+
+function generateVoidPhantom(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 ghostly void phantom — wispy dark purple with cyan eyes
+
+  // === Wispy body outline ===
+  gfx.fillStyle(0x1a1122);
+  gfx.fillRect(4, 1, 8, 12);
+  gfx.fillRect(3, 3, 10, 8);
+
+  // === Main body (dark purple) ===
+  gfx.fillStyle(0x332255);
+  gfx.fillRect(5, 2, 6, 10);
+  gfx.fillRect(4, 4, 8, 6);
+
+  // Body lighter core
+  gfx.fillStyle(0x443366);
+  gfx.fillRect(6, 3, 4, 7);
+
+  // Inner glow
+  gfx.fillStyle(0x554488);
+  gfx.fillRect(7, 4, 2, 4);
+
+  // === Glowing cyan eyes ===
+  gfx.fillStyle(0x44ffff);
+  gfx.fillRect(5, 5, 2, 2);
+  gfx.fillRect(9, 5, 2, 2);
+
+  // Eye core
+  gfx.fillStyle(0xaaffff);
+  gfx.fillRect(5, 5, 1, 1);
+  gfx.fillRect(9, 5, 1, 1);
+
+  // Eye glow trail
+  gfx.fillStyle(0x22aaaa);
+  gfx.fillRect(4, 5, 1, 1);
+  gfx.fillRect(11, 5, 1, 1);
+
+  // === Wispy trailing bottom ===
+  gfx.fillStyle(0x332255);
+  gfx.fillRect(4, 12, 2, 2);
+  gfx.fillRect(7, 12, 1, 3);
+  gfx.fillRect(10, 12, 2, 2);
+
+  // Wisps fade
+  gfx.fillStyle(0x221144);
+  gfx.fillRect(4, 14, 1, 1);
+  gfx.fillRect(7, 15, 1, 1);
+  gfx.fillRect(11, 14, 1, 1);
+
+  // === Ethereal particles ===
+  gfx.fillStyle(0x6644aa);
+  gfx.fillRect(3, 2, 1, 1);
+  gfx.fillRect(12, 3, 1, 1);
+  gfx.fillRect(2, 8, 1, 1);
+  gfx.fillRect(13, 7, 1, 1);
+
+  // Bright particles
+  gfx.fillStyle(0x8866cc);
+  gfx.fillRect(3, 6, 1, 1);
+  gfx.fillRect(12, 9, 1, 1);
+
+  gfx.generateTexture('voidPhantom', 16, 16);
+  gfx.destroy();
+}
+
+function generateSentinelDrone(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 mechanical sentinel drone — metallic gray with red sensor
+
+  // === Dark outline ===
+  gfx.fillStyle(0x1a1a1a);
+  gfx.fillRect(3, 2, 10, 12);
+  gfx.fillRect(2, 4, 1, 8);
+  gfx.fillRect(13, 4, 1, 8);
+
+  // === Main body (metallic gray) ===
+  gfx.fillStyle(0x778899);
+  gfx.fillRect(4, 3, 8, 10);
+  gfx.fillRect(3, 5, 10, 6);
+
+  // Body highlight (lighter panel)
+  gfx.fillStyle(0x99aabb);
+  gfx.fillRect(5, 4, 4, 4);
+  gfx.fillRect(6, 3, 3, 1);
+
+  // Body shadow
+  gfx.fillStyle(0x556677);
+  gfx.fillRect(4, 10, 8, 2);
+  gfx.fillRect(10, 5, 1, 5);
+
+  // === Panel lines (dark) ===
+  gfx.fillStyle(0x445566);
+  gfx.fillRect(4, 6, 8, 1);
+  gfx.fillRect(7, 3, 1, 10);
+
+  // === Red sensor eye ===
+  gfx.fillStyle(0xff2222);
+  gfx.fillRect(5, 4, 2, 2);
+  // Sensor glow
+  gfx.fillStyle(0xff6644);
+  gfx.fillRect(5, 4, 1, 1);
+  // Dark pupil
+  gfx.fillStyle(0x880000);
+  gfx.fillRect(6, 5, 1, 1);
+
+  // === Antenna ===
+  gfx.fillStyle(0x667788);
+  gfx.fillRect(7, 1, 2, 2);
+  gfx.fillStyle(0xff4444);
+  gfx.fillRect(7, 1, 1, 1);
+
+  // === Shoulder plates ===
+  gfx.fillStyle(0x778899);
+  gfx.fillRect(2, 5, 2, 4);
+  gfx.fillRect(12, 5, 2, 4);
+
+  gfx.fillStyle(0x99aabb);
+  gfx.fillRect(2, 5, 1, 2);
+  gfx.fillRect(13, 5, 1, 2);
+
+  gfx.fillStyle(0x556677);
+  gfx.fillRect(2, 8, 2, 1);
+  gfx.fillRect(12, 8, 2, 1);
+
+  // === Legs/treads ===
+  gfx.fillStyle(0x445566);
+  gfx.fillRect(4, 13, 3, 2);
+  gfx.fillRect(9, 13, 3, 2);
+
+  // Tread highlights
+  gfx.fillStyle(0x556677);
+  gfx.fillRect(5, 13, 2, 1);
+  gfx.fillRect(10, 13, 2, 1);
+
+  // === Energy core (small blue dot) ===
+  gfx.fillStyle(0x44aaff);
+  gfx.fillRect(9, 8, 2, 2);
+  gfx.fillStyle(0x88ccff);
+  gfx.fillRect(9, 8, 1, 1);
+
+  gfx.generateTexture('sentinelDrone', 16, 16);
+  gfx.destroy();
+}
+
+function generateBossLunarOverlord(scene) {
+  const gfx = scene.make.graphics({ add: false });
+  // 16x16 lunar overlord boss — imposing dark figure with glowing visor
+
+  // === Dark outline ===
+  gfx.fillStyle(0x0a0a0a);
+  gfx.fillRect(3, 0, 10, 1);
+  gfx.fillRect(2, 1, 1, 13);
+  gfx.fillRect(13, 1, 1, 13);
+  gfx.fillRect(3, 14, 4, 2);
+  gfx.fillRect(9, 14, 4, 2);
+
+  // === Helmet ===
+  gfx.fillStyle(0x333355);
+  gfx.fillRect(3, 1, 10, 5);
+  gfx.fillRect(4, 0, 8, 1);
+
+  // Helmet highlight
+  gfx.fillStyle(0x444466);
+  gfx.fillRect(4, 1, 5, 2);
+
+  // Helmet visor (glowing white-blue)
+  gfx.fillStyle(0xccddff);
+  gfx.fillRect(4, 3, 8, 2);
+  // Visor highlight
+  gfx.fillStyle(0xeeeeff);
+  gfx.fillRect(5, 3, 4, 1);
+  // Visor shadow
+  gfx.fillStyle(0x8899cc);
+  gfx.fillRect(4, 4, 8, 1);
+
+  // === Armored body ===
+  gfx.fillStyle(0x222244);
+  gfx.fillRect(3, 6, 10, 8);
+
+  // Silver/chrome trim
+  gfx.fillStyle(0x8899aa);
+  gfx.fillRect(3, 6, 10, 1);
+  gfx.fillRect(3, 10, 10, 1);
+
+  // Body panels
+  gfx.fillStyle(0x333355);
+  gfx.fillRect(4, 7, 8, 3);
+  gfx.fillRect(4, 11, 8, 2);
+
+  // Panel highlights
+  gfx.fillStyle(0x444466);
+  gfx.fillRect(5, 7, 3, 2);
+  gfx.fillRect(5, 11, 3, 1);
+
+  // === Red energy cores ===
+  gfx.fillStyle(0xff2222);
+  gfx.fillRect(5, 8, 2, 1);
+  gfx.fillRect(9, 8, 2, 1);
+  // Core glow
+  gfx.fillStyle(0xff6644);
+  gfx.fillRect(5, 8, 1, 1);
+  gfx.fillRect(9, 8, 1, 1);
+
+  // === Shoulder armor ===
+  gfx.fillStyle(0x333355);
+  gfx.fillRect(1, 6, 2, 5);
+  gfx.fillRect(13, 6, 2, 5);
+
+  gfx.fillStyle(0x8899aa);
+  gfx.fillRect(1, 6, 2, 1);
+  gfx.fillRect(13, 6, 2, 1);
+
+  gfx.fillStyle(0x444466);
+  gfx.fillRect(1, 7, 1, 2);
+  gfx.fillRect(14, 7, 1, 2);
+
+  // === Feet ===
+  gfx.fillStyle(0x333355);
+  gfx.fillRect(3, 14, 4, 2);
+  gfx.fillRect(9, 14, 4, 2);
+
+  gfx.fillStyle(0x8899aa);
+  gfx.fillRect(4, 14, 3, 1);
+  gfx.fillRect(10, 14, 3, 1);
+
+  gfx.generateTexture('bossLunarOverlord', 16, 16);
   gfx.destroy();
 }

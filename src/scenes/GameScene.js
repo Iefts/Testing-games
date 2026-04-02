@@ -45,6 +45,8 @@ export class GameScene extends Phaser.Scene {
     // Spawn obstacles based on level config
     this.trees = this.physics.add.staticGroup();
     this.cacti = this.physics.add.staticGroup();
+    this.corals = this.physics.add.staticGroup();
+    this.craters = this.physics.add.staticGroup();
     this.spawnObstacles();
 
     // Breakable pots
@@ -156,6 +158,28 @@ export class GameScene extends Phaser.Scene {
         player.setVelocity(Math.cos(angle) * 150, Math.sin(angle) * 150);
         this.damageNumbers?.show(player.x, player.y, 5, '#44aa44');
         this.cameras.main.shake(60, 0.001);
+      }
+    }, null, this);
+
+    // Collisions: player bumps into coral (blocks + light damage)
+    this.physics.add.collider(this.player, this.corals, (player) => {
+      if (!player.invulnerable) {
+        player.takeDamage(3);
+        this.damageNumbers?.show(player.x, player.y, 3, '#ff66aa');
+      }
+    }, null, this);
+
+    // Collisions: player bumps into craters (blocks + slow debuff)
+    this.physics.add.collider(this.player, this.craters, (player) => {
+      if (!player._craterSlowed) {
+        player._craterSlowed = true;
+        const origSpeed = player.speed;
+        player.speed = origSpeed * 0.6;
+        this.time.delayedCall(1500, () => {
+          player.speed = origSpeed;
+          player._craterSlowed = false;
+        });
+        this.damageNumbers?.show(player.x, player.y, 'SLOW', '#aaaaff');
       }
     }, null, this);
 
@@ -1091,6 +1115,16 @@ export class GameScene extends Phaser.Scene {
           cactus.body.setSize(8, 6);
           cactus.body.setOffset(4, 18);
           cactus.setDepth(y);
+        } else if (obstacleDef.type === 'coral') {
+          const coral = this.corals.create(x, y, 'coral');
+          coral.body.setSize(8, 6);
+          coral.body.setOffset(4, 18);
+          coral.setDepth(y);
+        } else if (obstacleDef.type === 'crater') {
+          const crater = this.craters.create(x, y, 'crater');
+          crater.body.setSize(10, 6);
+          crater.body.setOffset(3, 18);
+          crater.setDepth(y);
         }
       }
     }

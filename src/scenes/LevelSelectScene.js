@@ -45,6 +45,8 @@ export class LevelSelectScene extends Phaser.Scene {
         const previewColors = {
           grass: { bg: 0x4a8c3f, border: 0x3d7a33 },
           sand: { bg: 0xd4a843, border: 0xb08828 },
+          water: { bg: 0x1a5c8a, border: 0x144a70 },
+          lunar: { bg: 0x555566, border: 0x444455 },
         };
         const colors = previewColors[level.tileKey] || previewColors.grass;
         this.add.rectangle(cardX, cardY - 50, 160, 100, colors.bg)
@@ -58,6 +60,16 @@ export class LevelSelectScene extends Phaser.Scene {
           this.add.rectangle(cardX - 39, cardY - 50, 4, 4, 0x2d8b2e);
           this.add.rectangle(cardX + 25, cardY - 45, 4, 14, 0x2d8b2e);
           this.add.rectangle(cardX + 29, cardY - 40, 4, 4, 0x2d8b2e);
+        } else if (level.tileKey === 'water') {
+          this.add.rectangle(cardX - 35, cardY - 55, 8, 12, 0xcc4466);
+          this.add.rectangle(cardX - 33, cardY - 60, 4, 4, 0xee6688);
+          this.add.rectangle(cardX + 30, cardY - 45, 8, 12, 0xcc4466);
+          this.add.rectangle(cardX + 32, cardY - 50, 4, 4, 0xee6688);
+        } else if (level.tileKey === 'lunar') {
+          this.add.rectangle(cardX - 30, cardY - 50, 16, 8, 0x444455);
+          this.add.rectangle(cardX - 30, cardY - 50, 10, 4, 0x333344);
+          this.add.rectangle(cardX + 25, cardY - 60, 12, 6, 0x444455);
+          this.add.rectangle(cardX + 25, cardY - 60, 8, 3, 0x333344);
         }
       }
 

@@ -108,6 +108,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
         break;
       }
+      case 'drift': {
+        // Lazy floating with wide lateral drift and pulsing speed
+        const drift = Math.sin(this.moveTimer * 0.003) * 1.2;
+        const angle = baseAngle + drift;
+        const speedMod = 0.7 + 0.3 * Math.sin(this.moveTimer * 0.005);
+        this.setVelocity(
+          Math.cos(angle) * this.speed * speedMod,
+          Math.sin(angle) * this.speed * speedMod
+        );
+        break;
+      }
       default: {
         // Direct pursuit (slimes etc.)
         this.setVelocity(
