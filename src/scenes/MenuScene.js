@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { SaveSystem } from '../systems/SaveSystem.js';
 import { CHARACTERS } from '../config/Characters.js';
+import { COSMETICS } from '../config/Cosmetics.js';
+import { LEVELS } from '../config/Levels.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -131,6 +133,35 @@ export class MenuScene extends Phaser.Scene {
     this.createButton(480, 450, 'MULTIPLAYER', '#44aaff', '#222244', '#66ccff', '#333355', () => {
       this.scene.start('Lobby');
     }, '16px');
+
+    // Dev unlock button (bottom right)
+    const devBtn = this.add.text(920, 520, 'DEV: UNLOCK ALL', {
+      fontSize: '10px',
+      color: '#ff8800',
+      backgroundColor: '#222200',
+      padding: { x: 6, y: 3 },
+    }).setOrigin(1, 1).setInteractive({ useHandCursor: true });
+
+    devBtn.on('pointerover', () => devBtn.setColor('#ffaa44'));
+    devBtn.on('pointerout', () => devBtn.setColor('#ff8800'));
+    devBtn.on('pointerdown', () => {
+      // Unlock all characters
+      Object.keys(CHARACTERS).forEach(id => SaveSystem.unlockCharacter(id));
+      // Unlock all levels (except dev, which is always available)
+      Object.keys(LEVELS).forEach(id => { if (!LEVELS[id].isDev) SaveSystem.unlockLevel(id); });
+      // Unlock all cosmetics
+      Object.keys(COSMETICS).forEach(id => SaveSystem.unlockCosmetic(id));
+      // Grant coins and max level
+      SaveSystem.data.playerLevel = 100;
+      SaveSystem.data.playerXP = 0;
+      SaveSystem.data.coins += 9999;
+      // Mark all shop items as purchased
+      SaveSystem.data.purchasedItems = ['crimson_human', 'ice_fencer', 'royal_dealer', 'void_bloodMage', 'stealth_dronePilot', 'jade_snakeSwordsman'];
+      SaveSystem.save();
+      this.sound.play('sfx_levelUp', { volume: 0.5 });
+      this.cameras.main.flash(300, 255, 200, 0);
+      this.scene.restart();
+    });
 
     // --- Controls hint ---
     this.add.text(480, 510, 'ENTER to play  |  S for shop  |  M for multiplayer', {
