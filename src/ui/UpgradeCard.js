@@ -69,6 +69,21 @@ export class UpgradeCard {
     bg.on('pointerdown', () => {
       onClick(upgrade);
     });
+
+    this.bg = bg;
+    this.strokeColor = strokeColor;
+    this.hoverStroke = hoverStroke;
+    this.upgrade = upgrade;
+  }
+
+  setHighlighted(highlighted) {
+    if (highlighted) {
+      this.bg.setFillStyle(0x333366, 0.95);
+      this.bg.setStrokeStyle(3, this.hoverStroke);
+    } else {
+      this.bg.setFillStyle(0x222244, 0.9);
+      this.bg.setStrokeStyle(3, this.strokeColor);
+    }
   }
 
   destroy() {

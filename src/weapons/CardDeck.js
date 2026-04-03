@@ -173,9 +173,10 @@ export class CardDeck {
   }
 
   recycleCard(card) {
+    if (!card.active) return;
     card.setActive(false);
     card.setVisible(false);
-    card.body.enable = false;
+    if (card.body) card.body.enable = false;
     if (card.trailParticles) {
       card.trailParticles.destroy();
       card.trailParticles = null;
@@ -189,6 +190,7 @@ export class CardDeck {
   onCardHitEnemy(card, enemy) {
     if (!card.active || !enemy.active) return;
     if (card.hitEnemies.has(enemy)) return;
+    if (!card.body || !enemy.body) return;
     card.hitEnemies.add(enemy);
 
     const suit = card.suit;
@@ -259,7 +261,10 @@ export class CardDeck {
     let nearestDist = 200;
 
     const enemies = this.enemies;
-    if (!enemies) return;
+    if (!enemies) {
+      this.recycleCard(card);
+      return;
+    }
 
     enemies.getChildren().forEach((enemy) => {
       if (!enemy.active || card.hitEnemies.has(enemy)) return;
@@ -321,7 +326,9 @@ export class CardDeck {
     const enemies = this.enemies;
     if (!enemies) return;
 
-    enemies.getChildren().forEach((enemy) => {
+    // Snapshot active enemies to avoid issues with mid-iteration kills
+    const activeEnemies = enemies.getChildren().filter(e => e.active);
+    activeEnemies.forEach((enemy) => {
       if (!enemy.active) return;
       const dist = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
       if (dist <= radius) {
@@ -334,7 +341,7 @@ export class CardDeck {
 
     // Break pots in area
     if (this.scene.pots) {
-      this.scene.pots.getChildren().forEach((pot) => {
+      this.scene.pots.getChildren().filter(p => p.active).forEach((pot) => {
         if (!pot.active) return;
         const dist = Phaser.Math.Distance.Between(x, y, pot.x, pot.y);
         if (dist <= radius) {
@@ -371,8 +378,9 @@ export class CardDeck {
     const enemies = this.enemies;
     if (!enemies) return;
 
-    const slowedEnemies = [];
-    enemies.getChildren().forEach((enemy) => {
+    // Snapshot active enemies to avoid issues with mid-iteration kills
+    const activeEnemies = enemies.getChildren().filter(e => e.active);
+    activeEnemies.forEach((enemy) => {
       if (!enemy.active) return;
       const dist = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
       if (dist <= radius) {
@@ -381,7 +389,7 @@ export class CardDeck {
           this.scene.damageNumbers.show(enemy.x, enemy.y, damage, '#44cc44');
         }
         // Apply slow effect
-        if (!enemy.clubSlowed) {
+        if (enemy.active && !enemy.clubSlowed) {
           enemy.clubSlowed = true;
           const origSpeed = enemy.speed;
           enemy.speed = origSpeed * 0.4;
@@ -400,7 +408,7 @@ export class CardDeck {
 
     // Break pots in area
     if (this.scene.pots) {
-      this.scene.pots.getChildren().forEach((pot) => {
+      this.scene.pots.getChildren().filter(p => p.active).forEach((pot) => {
         if (!pot.active) return;
         const dist = Phaser.Math.Distance.Between(x, y, pot.x, pot.y);
         if (dist <= radius) {
@@ -433,7 +441,7 @@ export class CardDeck {
 
     // Listen for enemy kills to drop bonus XP from diamond cards
     this.scene.events.on('enemyKilled', (enemy) => {
-      if (enemy.bonusXPOrbs && enemy.bonusXPOrbs > 0 && this.scene.xpSystem) {
+      if (enemy.bonusXPOrbs && enemy.bonusXPOrbs > 0 && this.scene.xpSystem && this.scene.xpSystem.gems) {
         for (let i = 0; i < enemy.bonusXPOrbs; i++) {
           const ox = enemy.x + Phaser.Math.Between(-12, 12);
           const oy = enemy.y + Phaser.Math.Between(-12, 12);
@@ -441,8 +449,10 @@ export class CardDeck {
           if (gem) {
             gem.setActive(true);
             gem.setVisible(true);
-            gem.body.enable = true;
-            gem.body.setAllowGravity(false);
+            if (gem.body) {
+              gem.body.enable = true;
+              gem.body.setAllowGravity(false);
+            }
             gem.xpValue = 5;
             gem.setVelocity(
               Phaser.Math.Between(-30, 30),

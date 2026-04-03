@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { CHARACTERS } from '../config/Characters.js';
-import { NetworkManager } from '../systems/NetworkManager.js';
-import { isValidRoomCode } from '../utils/RoomCode.js';
+import { PeerManager } from '../systems/PeerManager.js';
 
 export class LobbyScene extends Phaser.Scene {
   constructor() {
@@ -10,14 +9,12 @@ export class LobbyScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor('#1a1a2e');
-    this.network = new NetworkManager();
+    this.network = new PeerManager();
     this.game.registry.set('network', this.network);
 
     this.selectedCharacter = 'human';
     this.lobbyPlayers = [];
-    this.lobbyElements = [];
     this.joined = false;
-    this.inputMode = 'code'; // 'code' or 'ip'
 
     // Title
     this.add.text(480, 40, 'MULTIPLAYER', {
@@ -28,7 +25,7 @@ export class LobbyScene extends Phaser.Scene {
 
     // Host button
     this.hostBtn = this.createButton(340, 130, 'HOST GAME', '#44cc44', () => {
-      this.connectTo('localhost');
+      this.hostGame();
     });
 
     // Join section label
@@ -37,7 +34,7 @@ export class LobbyScene extends Phaser.Scene {
       color: '#aaaaaa',
     }).setOrigin(0.5);
 
-    // Code/IP input field (Phaser text as visual display)
+    // Code input field
     this.ipInput = this.add.text(380, 235, '', {
       fontSize: '22px',
       color: '#ffffff',
@@ -74,16 +71,9 @@ export class LobbyScene extends Phaser.Scene {
 
     // Sync hidden input to Phaser text display
     this.hiddenInput.addEventListener('input', () => {
-      if (this.inputMode === 'code') {
-        const filtered = this.hiddenInput.value.replace(/[^A-Za-z]/g, '').toUpperCase();
-        if (filtered !== this.hiddenInput.value) {
-          this.hiddenInput.value = filtered;
-        }
-      } else {
-        const filtered = this.hiddenInput.value.replace(/[^0-9.:]/g, '');
-        if (filtered !== this.hiddenInput.value) {
-          this.hiddenInput.value = filtered;
-        }
+      const filtered = this.hiddenInput.value.replace(/[^A-Za-z]/g, '').toUpperCase();
+      if (filtered !== this.hiddenInput.value) {
+        this.hiddenInput.value = filtered;
       }
       this.updateInputDisplay();
     });
@@ -144,22 +134,6 @@ export class LobbyScene extends Phaser.Scene {
       this.attemptJoin();
     });
 
-    // Toggle link: switch between code and IP input
-    this.toggleText = this.add.text(480, 275, 'Use IP address instead', {
-      fontSize: '12px',
-      color: '#6688aa',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-    this.toggleText.on('pointerover', () => this.toggleText.setColor('#88aacc'));
-    this.toggleText.on('pointerout', () => this.toggleText.setColor('#6688aa'));
-    this.toggleText.on('pointerdown', () => {
-      if (this.inputMode === 'code') {
-        this.switchToIPMode();
-      } else {
-        this.switchToCodeMode();
-      }
-    });
-
     // Room code display (shown to host after connecting)
     this.roomCodeDisplay = this.add.text(480, 200, '', {
       fontSize: '28px',
@@ -217,13 +191,13 @@ export class LobbyScene extends Phaser.Scene {
     // Network callbacks
     this.network.onLobbyUpdate = (msg) => this.updateLobby(msg);
     this.network.onGameStart = (msg) => this.startMultiplayerGame(msg);
-    this.network.onError = () => {
+    this.network.onError = (err) => {
       this.statusText.setText('Connection failed! Check code and try again.');
       this.statusText.setColor('#ff4444');
     };
     this.network.onDisconnect = () => {
       if (this.scene.isActive('Lobby')) {
-        this.statusText.setText('Disconnected from server.');
+        this.statusText.setText('Disconnected from host.');
         this.statusText.setColor('#ff4444');
         this.joined = false;
       }
@@ -233,72 +207,42 @@ export class LobbyScene extends Phaser.Scene {
     this.updateInputDisplay();
   }
 
-  switchToIPMode() {
-    this.inputMode = 'ip';
-    this.hiddenInput.value = '192.168.1.';
-    this.hiddenInput.maxLength = 50;
-    this.hiddenInput.inputMode = 'url';
-    this.hiddenInput.autocapitalize = 'off';
-    this.joinLabel.setText('ENTER IP ADDRESS:');
-    this.toggleText.setText('Use room code instead');
-    this.ipInput.setStyle({ letterSpacing: 0, fontSize: '18px' });
-    this.updateInputDisplay();
-  }
-
-  switchToCodeMode() {
-    this.inputMode = 'code';
-    this.hiddenInput.value = '';
-    this.hiddenInput.maxLength = 4;
-    this.hiddenInput.inputMode = 'text';
-    this.hiddenInput.autocapitalize = 'characters';
-    this.joinLabel.setText('ENTER ROOM CODE:');
-    this.toggleText.setText('Use IP address instead');
-    this.ipInput.setStyle({ letterSpacing: 8, fontSize: '22px' });
-    this.updateInputDisplay();
-  }
-
-  attemptJoin() {
-    const raw = this.hiddenInput.value.trim();
-
-    if (this.inputMode === 'code') {
-      const code = raw.toUpperCase();
-      if (!isValidRoomCode(code)) {
-        this.statusText.setText('Enter a valid 4-letter code');
-        this.statusText.setColor('#ff4444');
-        return;
-      }
-      this.statusText.setText('Connecting...');
-      this.statusText.setColor('#ffdd44');
-      this.network.connectWithCode(code).then(() => this.onConnected()).catch(() => {
-        this.statusText.setText('Connection failed! Check code and try again.');
-        this.statusText.setColor('#ff4444');
-      });
-    } else {
-      if (!raw) {
-        this.statusText.setText('Enter an IP address');
-        this.statusText.setColor('#ff4444');
-        return;
-      }
-      this.connectTo(raw);
-    }
-  }
-
-  async connectTo(host) {
-    this.statusText.setText('Connecting...');
+  async hostGame() {
+    this.statusText.setText('Creating room...');
     this.statusText.setColor('#ffdd44');
 
     try {
-      await this.network.connect(host);
+      await this.network.host();
       this.onConnected();
     } catch (e) {
-      this.statusText.setText('Failed to connect. Is the server running?');
+      this.statusText.setText('Failed to create room. Try again.');
       this.statusText.setColor('#ff4444');
     }
   }
 
+  attemptJoin() {
+    const code = this.hiddenInput.value.trim().toUpperCase();
+
+    if (!code || code.length !== 4 || !/^[A-Z]{4}$/.test(code)) {
+      this.statusText.setText('Enter a valid 4-letter code');
+      this.statusText.setColor('#ff4444');
+      return;
+    }
+
+    this.statusText.setText('Connecting...');
+    this.statusText.setColor('#ffdd44');
+
+    this.network.join(code).then(() => {
+      this.onConnected();
+    }).catch(() => {
+      this.statusText.setText('Could not find room. Check code and try again.');
+      this.statusText.setColor('#ff4444');
+    });
+  }
+
   onConnected() {
     this.joined = true;
-    this.statusText.setText(`Connected! Your ID: ${this.network.myId}`);
+    this.statusText.setText('Connected!');
     this.statusText.setColor('#44cc44');
 
     // Auto-join with selected character
@@ -308,19 +252,14 @@ export class LobbyScene extends Phaser.Scene {
     this.joinLabel.setVisible(false);
     this.ipInput.setVisible(false);
     this.joinBtn.setVisible(false);
-    this.toggleText.setVisible(false);
     this.hostBtn.setVisible(false);
 
-    // Show room code to host
-    if (this.network.isHost && this.network.roomCode) {
+    // Show room code
+    if (this.network.roomCode) {
       this.roomCodeDisplay.setText(`ROOM CODE: ${this.network.roomCode}`);
       this.roomCodeDisplay.setVisible(true);
       this.roomCodeSubtext.setText('Share this code with other players');
       this.roomCodeSubtext.setVisible(true);
-    } else if (this.network.isHost) {
-      this.roomCodeDisplay.setText('Share your IP with other players');
-      this.roomCodeDisplay.setStyle({ fontSize: '16px', color: '#88cc88' });
-      this.roomCodeDisplay.setVisible(true);
     }
 
     // Show character selection
@@ -385,14 +324,8 @@ export class LobbyScene extends Phaser.Scene {
     const val = this.hiddenInput.value;
     const isFocused = document.activeElement === this.hiddenInput;
     const cursor = (isFocused && this.cursorVisible) ? '|' : '';
-
-    if (this.inputMode === 'code') {
-      // Show spaced-out letters for code mode
-      const display = val.toUpperCase() + cursor;
-      this.ipInput.setText(display || cursor);
-    } else {
-      this.ipInput.setText(val + cursor);
-    }
+    const display = val.toUpperCase() + cursor;
+    this.ipInput.setText(display || cursor);
   }
 
   createButton(x, y, text, color, onClick) {

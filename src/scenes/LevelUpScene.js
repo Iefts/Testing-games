@@ -42,6 +42,31 @@ export class LevelUpScene extends Phaser.Scene {
       );
       this.cards.push(card);
     });
+
+    // Keyboard navigation
+    this.selectedIndex = 0;
+    this.cards[0].setHighlighted(true);
+
+    this.input.keyboard.on('keydown', (event) => {
+      const key = event.code;
+      if (key === 'ArrowLeft' || key === 'KeyA') {
+        this.moveSelection(-1);
+      } else if (key === 'ArrowRight' || key === 'KeyD') {
+        this.moveSelection(1);
+      } else if (key === 'ArrowUp' || key === 'KeyW') {
+        this.moveSelection(-1);
+      } else if (key === 'ArrowDown' || key === 'KeyS') {
+        this.moveSelection(1);
+      } else if (key === 'Space' || key === 'Enter') {
+        this.selectUpgrade(this.cards[this.selectedIndex].upgrade);
+      }
+    });
+  }
+
+  moveSelection(dir) {
+    this.cards[this.selectedIndex].setHighlighted(false);
+    this.selectedIndex = (this.selectedIndex + dir + this.cards.length) % this.cards.length;
+    this.cards[this.selectedIndex].setHighlighted(true);
   }
 
   selectUpgrade(upgrade) {

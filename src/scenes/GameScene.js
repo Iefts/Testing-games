@@ -1055,15 +1055,26 @@ export class GameScene extends Phaser.Scene {
 
     bullet.setActive(false);
     bullet.setVisible(false);
-    bullet.body.enable = false;
+    if (bullet.body) bullet.body.enable = false;
+
+    // Clean up card trail particles if this is a card
+    if (bullet.trailParticles) {
+      bullet.trailParticles.destroy();
+      bullet.trailParticles = null;
+    }
+    if (bullet.trailUpdate) {
+      bullet.trailUpdate.destroy();
+      bullet.trailUpdate = null;
+    }
 
     this.breakPot(pot);
   }
 
   breakPot(pot) {
+    if (!pot.active) return;
     pot.setActive(false);
     pot.setVisible(false);
-    pot.body.enable = false;
+    if (pot.body) pot.body.enable = false;
 
     this.sound.play('sfx_potBreak', { volume: 0.25 });
 
