@@ -23,9 +23,11 @@ export class VirtualJoystick {
 
     this.pointerId = null;
 
-    scene.input.on('pointerdown', (pointer) => {
-      if (pointer.x > scene.scale.width * 0.4) return;
+    scene.input.on('pointerdown', (pointer, currentlyOver) => {
       if (this.pointerId !== null) return;
+      // Don't start a joystick drag if the touch landed on a UI element
+      // (emote button, etc.) — let that interaction take over.
+      if (currentlyOver && currentlyOver.length > 0) return;
 
       this.pointerId = pointer.id;
       this.active = true;

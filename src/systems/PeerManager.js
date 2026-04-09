@@ -66,11 +66,14 @@ export class PeerManager {
 
       this.peer.on('open', (id) => {
         clearTimeout(timeout);
-        this.myId = 'p1';
         this.connected = true;
 
         // Create room
         this.room = createRoom();
+
+        // Allocate host's player ID from the same counter as clients
+        // so host and joining peers can never collide on `p1`.
+        this.myId = `p${this.room.nextId++}`;
         this.room.hostId = this.myId;
 
         // Host joins as player

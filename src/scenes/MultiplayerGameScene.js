@@ -362,9 +362,24 @@ export class MultiplayerGameScene extends Phaser.Scene {
 
     for (const p of players) {
       if (p.id === this.network.myId) {
-        // Reconcile predicted position with server (gentle correction)
-        this.localPlayer.x = Phaser.Math.Linear(this.localPlayer.x, p.x, 0.15);
-        this.localPlayer.y = Phaser.Math.Linear(this.localPlayer.y, p.y, 0.15);
+        // Keep local speed in sync with server (so upgrades like SPEED apply
+        // to the client-side prediction immediately on the next state).
+        if (typeof p.sp === 'number') this.localSpeed = p.sp;
+
+        // Reconcile predicted position with server only when it actually drifts.
+        // Snapping/lerping every frame fights the prediction and feels clanky.
+        const dx = p.x - this.localPlayer.x;
+        const dy = p.y - this.localPlayer.y;
+        const drift = Math.sqrt(dx * dx + dy * dy);
+        if (drift > 32) {
+          // Big divergence (collision, teleport, respawn) — snap.
+          this.localPlayer.x = p.x;
+          this.localPlayer.y = p.y;
+        } else if (drift > 3) {
+          // Small drift — soft pull toward server.
+          this.localPlayer.x += dx * 0.2;
+          this.localPlayer.y += dy * 0.2;
+        }
 
         this.localPlayer.setVisible(p.alive);
         this.localPlayer.setAlpha(p.inv ? 0.5 : 1);

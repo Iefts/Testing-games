@@ -134,6 +134,44 @@ export class MenuScene extends Phaser.Scene {
       this.scene.start('Lobby');
     }, '16px');
 
+    // Fullscreen toggle (helps hide the mobile browser address bar)
+    if (this.scale.fullscreen.available) {
+      const fsBtn = this.add.text(40, 520, '\u26F6 FULLSCREEN', {
+        fontSize: '12px',
+        color: '#88aacc',
+        backgroundColor: '#222244',
+        padding: { x: 8, y: 4 },
+      }).setOrigin(0, 1).setInteractive({ useHandCursor: true });
+
+      const updateLabel = () => {
+        fsBtn.setText(this.scale.isFullscreen ? '\u26F6 EXIT FULLSCREEN' : '\u26F6 FULLSCREEN');
+      };
+
+      fsBtn.on('pointerover', () => fsBtn.setColor('#aaccff'));
+      fsBtn.on('pointerout', () => fsBtn.setColor('#88aacc'));
+      fsBtn.on('pointerdown', () => {
+        this.sound.play('sfx_buttonClick', { volume: 0.3 });
+        if (this.scale.isFullscreen) {
+          this.scale.stopFullscreen();
+        } else {
+          this.scale.startFullscreen();
+        }
+        // Phaser updates state on the next frame
+        this.time.delayedCall(50, updateLabel);
+      });
+
+      this.scale.on('fullscreenunsupported', () => {
+        fsBtn.setText('FULLSCREEN N/A').disableInteractive();
+      });
+
+      // Keyboard: F toggles fullscreen
+      this.input.keyboard.on('keydown-F', () => {
+        if (this.scale.isFullscreen) this.scale.stopFullscreen();
+        else this.scale.startFullscreen();
+        this.time.delayedCall(50, updateLabel);
+      });
+    }
+
     // Dev unlock button (bottom right)
     const devBtn = this.add.text(920, 520, 'DEV: UNLOCK ALL', {
       fontSize: '10px',

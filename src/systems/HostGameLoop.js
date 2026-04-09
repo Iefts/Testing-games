@@ -778,6 +778,7 @@ export function buildStateSnapshot(room) {
     players.push({
       id: p.id, ch: p.characterId,
       x: Math.round(p.x), y: Math.round(p.y),
+      sp: p.speed,
       hp: p.hp, mhp: p.maxHp, flipX: p.flipX, anim: p.anim,
       inv: p.invulnerable, alive: p.alive, xp: p.xp, level: p.level,
       rt: p.alive ? 0 : Math.ceil(p.respawnTimer),
