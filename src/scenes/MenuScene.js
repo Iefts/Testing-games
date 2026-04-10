@@ -10,60 +10,119 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#0d0d1a');
+    this.cameras.main.setBackgroundColor('#080814');
 
-    // --- Animated particle background ---
+    // --- Layered animated background ---
+    // Deep star field (slow, small)
     this.particles = [];
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
+      const x = Phaser.Math.Between(0, 960);
+      const y = Phaser.Math.Between(0, 540);
+      const size = Phaser.Math.Between(1, 2);
+      const alpha = 0.05 + Math.random() * 0.25;
+      const color = Phaser.Math.RND.pick([0x334488, 0x443366, 0x223355]);
+      const particle = this.add.rectangle(x, y, size, size, color, alpha);
+      particle._vx = (Math.random() - 0.5) * 0.1;
+      particle._vy = -0.05 - Math.random() * 0.1;
+      particle._baseAlpha = alpha;
+      particle._layer = 0;
+      this.particles.push(particle);
+    }
+    // Mid-layer floating motes (medium, colorful)
+    for (let i = 0; i < 30; i++) {
       const x = Phaser.Math.Between(0, 960);
       const y = Phaser.Math.Between(0, 540);
       const size = Phaser.Math.Between(1, 3);
-      const alpha = 0.1 + Math.random() * 0.4;
-      const color = Phaser.Math.RND.pick([0x4444aa, 0x6644cc, 0x2266aa, 0x8844cc, 0xffffff]);
+      const alpha = 0.1 + Math.random() * 0.35;
+      const color = Phaser.Math.RND.pick([0x5555cc, 0x7744dd, 0x3388bb, 0x9955ee]);
       const particle = this.add.rectangle(x, y, size, size, color, alpha);
       particle._vx = (Math.random() - 0.5) * 0.3;
-      particle._vy = -0.1 - Math.random() * 0.3;
+      particle._vy = -0.15 - Math.random() * 0.25;
       particle._baseAlpha = alpha;
+      particle._layer = 1;
+      this.particles.push(particle);
+    }
+    // Bright sparks (rare, eye-catching)
+    for (let i = 0; i < 8; i++) {
+      const x = Phaser.Math.Between(0, 960);
+      const y = Phaser.Math.Between(0, 540);
+      const alpha = 0.3 + Math.random() * 0.5;
+      const color = Phaser.Math.RND.pick([0xffffff, 0xaaccff, 0xddaaff]);
+      const particle = this.add.rectangle(x, y, 2, 2, color, alpha);
+      particle._vx = (Math.random() - 0.5) * 0.5;
+      particle._vy = -0.2 - Math.random() * 0.4;
+      particle._baseAlpha = alpha;
+      particle._layer = 2;
       this.particles.push(particle);
     }
 
-    // --- Title with glow effect ---
-    // Glow shadow (pulsing)
-    this.titleGlow = this.add.text(480, 80, 'ROGUELIKE\nSURVIVOR', {
-      fontSize: '52px',
-      color: '#4444cc',
+    // --- Decorative divider lines ---
+    this.add.rectangle(480, 155, 320, 1, 0x333366, 0.4);
+    this.add.rectangle(480, 157, 200, 1, 0x222244, 0.3);
+
+    // --- Title with layered glow effect ---
+    // Outer glow (wide, soft)
+    this.titleGlowOuter = this.add.text(480, 76, 'ROGUELIKE\nSURVIVOR', {
+      fontSize: '54px',
+      color: '#2222aa',
       fontStyle: 'bold',
       align: 'center',
-      lineSpacing: 4,
+      lineSpacing: 2,
+    }).setOrigin(0.5).setAlpha(0.15);
+
+    // Inner glow (pulsing)
+    this.titleGlow = this.add.text(480, 76, 'ROGUELIKE\nSURVIVOR', {
+      fontSize: '50px',
+      color: '#5555dd',
+      fontStyle: 'bold',
+      align: 'center',
+      lineSpacing: 2,
     }).setOrigin(0.5).setAlpha(0.3);
 
-    // Main title
-    this.add.text(480, 80, 'ROGUELIKE\nSURVIVOR', {
+    // Main title with stroke
+    this.add.text(480, 76, 'ROGUELIKE\nSURVIVOR', {
       fontSize: '48px',
-      color: '#ffffff',
+      color: '#eeeeff',
       fontStyle: 'bold',
       align: 'center',
-      lineSpacing: 4,
+      lineSpacing: 2,
+      stroke: '#111133',
+      strokeThickness: 4,
     }).setOrigin(0.5);
 
-    // Subtitle
-    this.add.text(480, 130, 'Survive the hordes', {
+    // Subtitle with decorative dashes
+    this.add.text(480, 134, '- - Survive the hordes - -', {
       fontSize: '13px',
-      color: '#6666aa',
+      color: '#7777aa',
+      fontStyle: 'bold',
+      stroke: '#080814',
+      strokeThickness: 2,
     }).setOrigin(0.5);
 
-    // --- Character showcase ---
+    // --- Character showcase with frame ---
     const unlockedChars = Object.keys(CHARACTERS).filter(id => SaveSystem.isCharacterUnlocked(id));
     this.showcaseChars = unlockedChars;
     this.showcaseIndex = 0;
 
-    this.showcaseBg = this.add.rectangle(480, 200, 80, 80, 0x111133, 0.5)
-      .setStrokeStyle(1, 0x333366);
+    // Showcase frame (double border)
+    this.add.rectangle(480, 204, 88, 88, 0x000000, 0.3);
+    this.showcaseBg = this.add.rectangle(480, 204, 82, 82, 0x0d0d22, 0.7)
+      .setStrokeStyle(2, 0x444477);
+    // Corner accents
+    const cornerSize = 6;
+    const cX = 480, cY = 204, cHalf = 41;
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx, dy]) => {
+      this.add.rectangle(cX + dx * cHalf, cY + dy * cHalf, cornerSize, 2, 0x6666aa);
+      this.add.rectangle(cX + dx * cHalf, cY + dy * cHalf, 2, cornerSize, 0x6666aa);
+    });
 
     this.showcaseSprite = null;
-    this.showcaseNameText = this.add.text(480, 248, '', {
+    this.showcaseNameText = this.add.text(480, 254, '', {
       fontSize: '11px',
-      color: '#8888bb',
+      color: '#9999cc',
+      fontStyle: 'bold',
+      stroke: '#080814',
+      strokeThickness: 2,
     }).setOrigin(0.5);
 
     this.updateShowcase();
@@ -78,29 +137,37 @@ export class MenuScene extends Phaser.Scene {
       loop: true,
     });
 
-    // --- Progress bar ---
+    // --- Progress bar (refined) ---
     const barX = 280;
-    const barY = 290;
+    const barY = 284;
     const barW = 400;
     const barH = 22;
 
-    // Bar background
-    this.add.rectangle(barX + barW / 2, barY + barH / 2, barW + 4, barH + 4, 0x000000, 0.5)
-      .setStrokeStyle(2, 0x4444aa);
-    this.add.rectangle(barX, barY, barW, barH, 0x111133).setOrigin(0);
+    // Bar shadow
+    this.add.rectangle(barX + barW / 2 + 2, barY + barH / 2 + 2, barW + 4, barH + 4, 0x000000, 0.3);
+    // Bar outer frame
+    this.add.rectangle(barX + barW / 2, barY + barH / 2, barW + 6, barH + 6, 0x000000, 0.6)
+      .setStrokeStyle(2, 0x3344aa);
+    // Bar inner bg
+    this.add.rectangle(barX, barY, barW, barH, 0x0d0d22).setOrigin(0);
 
-    // Bar fill
+    // Bar fill with gradient effect (two layers)
     const fill = SaveSystem.xpProgress;
-    this.progressFill = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * fill, barH - 4, 0x44aaff).setOrigin(0);
+    this.progressFill = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * fill, barH - 4, 0x3388dd).setOrigin(0);
+    // Lighter top half for gradient look
+    this.progressHighlight = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * fill, (barH - 4) / 2, 0x55aaff, 0.4).setOrigin(0);
+    // Shimmer overlay
+    this.progressGlow = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * fill, barH - 4, 0x88ccff, 0.1).setOrigin(0);
 
-    // Bar glow overlay
-    this.progressGlow = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * fill, barH - 4, 0x88ccff, 0.15).setOrigin(0);
-
-    // Level text on bar
-    this.add.text(barX - 50, barY + barH / 2, `Lv.${SaveSystem.level}`, {
-      fontSize: '16px',
+    // Level badge (styled)
+    this.add.rectangle(barX - 46, barY + barH / 2, 44, 26, 0x111133)
+      .setStrokeStyle(2, 0x4455aa);
+    this.add.text(barX - 46, barY + barH / 2, `Lv.${SaveSystem.level}`, {
+      fontSize: '14px',
       color: '#ffffff',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0.5);
 
     // XP text
@@ -109,28 +176,33 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(barX + barW / 2, barY + barH / 2, xpDisplay, {
       fontSize: '11px',
       color: '#ccccff',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0.5);
 
-    // --- Coins display ---
-    this.add.sprite(370, 330, 'icon_coin').setScale(2);
-    this.add.text(385, 330, `${SaveSystem.coins} coins`, {
+    // --- Coins display (styled) ---
+    this.add.sprite(370, 326, 'icon_coin').setScale(2);
+    this.add.text(385, 326, `${SaveSystem.coins} coins`, {
       fontSize: '14px',
       color: '#ddaa22',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0, 0.5);
 
-    // --- Buttons ---
+    // --- Buttons (polished with pixel-style borders) ---
     // Play button
-    this.createButton(380, 390, 'PLAY', '#44ff88', '#224433', '#66ffaa', '#335544', () => {
+    this.createButton(380, 386, 'PLAY', '#44ff88', '#1a3322', '#66ffaa', '#224433', () => {
       this.scene.start('CharacterSelect');
     });
 
     // Shop button
-    this.createButton(580, 390, 'SHOP', '#ffcc44', '#333322', '#ffdd66', '#444433', () => {
+    this.createButton(580, 386, 'SHOP', '#ffcc44', '#332b11', '#ffdd66', '#443b22', () => {
       this.scene.start('Shop');
     });
 
-    // Multiplayer button (smaller)
-    this.createButton(480, 450, 'MULTIPLAYER', '#44aaff', '#222244', '#66ccff', '#333355', () => {
+    // Multiplayer button
+    this.createButton(480, 446, 'MULTIPLAYER', '#55bbff', '#1a2244', '#77ddff', '#223355', () => {
       this.scene.start('Lobby');
     }, '16px');
 
@@ -235,23 +307,40 @@ export class MenuScene extends Phaser.Scene {
   }
 
   createButton(x, y, text, color, bgColor, hoverColor, hoverBg, onClick, fontSize = '22px') {
+    // Shadow rectangle behind button
+    const metrics = { x: 28, y: 10 };
+    const tempText = this.add.text(0, 0, text, { fontSize, fontStyle: 'bold', padding: metrics }).setOrigin(0.5).setVisible(false);
+    const bw = tempText.width + 8;
+    const bh = tempText.height + 4;
+    tempText.destroy();
+
+    const shadow = this.add.rectangle(x + 2, y + 2, bw, bh, 0x000000, 0.3);
+    const border = this.add.rectangle(x, y, bw, bh, 0x000000, 0)
+      .setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(color).color);
+
     const btn = this.add.text(x, y, text, {
       fontSize,
       color,
       fontStyle: 'bold',
       backgroundColor: bgColor,
-      padding: { x: 28, y: 10 },
+      padding: metrics,
+      stroke: '#000000',
+      strokeThickness: 1,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     btn.on('pointerover', () => {
       btn.setColor(hoverColor);
       btn.setBackgroundColor(hoverBg);
       btn.setScale(1.05);
+      border.setScale(1.05);
+      border.setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(hoverColor).color);
     });
     btn.on('pointerout', () => {
       btn.setColor(color);
       btn.setBackgroundColor(bgColor);
       btn.setScale(1.0);
+      border.setScale(1.0);
+      border.setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(color).color);
     });
     btn.on('pointerdown', () => {
       this.sound.play('sfx_buttonClick', { volume: 0.4 });
@@ -276,22 +365,24 @@ export class MenuScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Animate particles
+    // Animate particles with parallax by layer
     for (const p of this.particles) {
       p.x += p._vx;
       p.y += p._vy;
       if (p.y < -5) p.y = 545;
       if (p.x < -5) p.x = 965;
       if (p.x > 965) p.x = -5;
-      p.alpha = p._baseAlpha + Math.sin(time * 0.002 + p.x) * 0.15;
+      const speed = p._layer === 2 ? 0.004 : (p._layer === 1 ? 0.002 : 0.001);
+      p.alpha = p._baseAlpha + Math.sin(time * speed + p.x * 0.5) * 0.15;
     }
 
-    // Pulse title glow
+    // Pulse title glow (layered)
     this.glowTimer += delta * 0.002;
-    const glowAlpha = 0.15 + Math.sin(this.glowTimer) * 0.15;
+    const glowAlpha = 0.2 + Math.sin(this.glowTimer) * 0.15;
     this.titleGlow.setAlpha(glowAlpha);
+    this.titleGlowOuter.setAlpha(0.1 + Math.sin(this.glowTimer * 0.7) * 0.08);
 
     // Pulse progress bar glow
-    this.progressGlow.setAlpha(0.1 + Math.sin(this.glowTimer * 1.5) * 0.1);
+    this.progressGlow.setAlpha(0.08 + Math.sin(this.glowTimer * 1.5) * 0.08);
   }
 }

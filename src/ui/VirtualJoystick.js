@@ -11,22 +11,53 @@ export class VirtualJoystick {
 
     if (!this.enabled) return;
 
-    this.base = scene.add.circle(0, 0, this.maxRadius, 0xffffff, 0.2)
+    // Outer ring (base)
+    this.baseOuter = scene.add.circle(0, 0, this.maxRadius + 4, 0xffffff, 0.08)
       .setScrollFactor(0)
       .setDepth(150)
       .setVisible(false);
 
-    this.thumb = scene.add.circle(0, 0, 24, 0xffffff, 0.5)
+    // Base circle with dashed-line look
+    this.base = scene.add.circle(0, 0, this.maxRadius, 0xffffff, 0.12)
+      .setScrollFactor(0)
+      .setDepth(150)
+      .setVisible(false)
+      .setStrokeStyle(2, 0xffffff, 0.2);
+
+    // Directional crosshair lines
+    this.crossH = scene.add.rectangle(0, 0, this.maxRadius * 1.6, 1, 0xffffff, 0.08)
+      .setScrollFactor(0)
+      .setDepth(150)
+      .setVisible(false);
+
+    this.crossV = scene.add.rectangle(0, 0, 1, this.maxRadius * 1.6, 0xffffff, 0.08)
+      .setScrollFactor(0)
+      .setDepth(150)
+      .setVisible(false);
+
+    // Thumb outer glow
+    this.thumbGlow = scene.add.circle(0, 0, 28, 0xffffff, 0.15)
       .setScrollFactor(0)
       .setDepth(151)
+      .setVisible(false);
+
+    // Thumb (inner)
+    this.thumb = scene.add.circle(0, 0, 22, 0xffffff, 0.4)
+      .setScrollFactor(0)
+      .setDepth(152)
+      .setVisible(false)
+      .setStrokeStyle(2, 0xffffff, 0.5);
+
+    // Center dot
+    this.thumbDot = scene.add.circle(0, 0, 4, 0xffffff, 0.6)
+      .setScrollFactor(0)
+      .setDepth(153)
       .setVisible(false);
 
     this.pointerId = null;
 
     scene.input.on('pointerdown', (pointer, currentlyOver) => {
       if (this.pointerId !== null) return;
-      // Don't start a joystick drag if the touch landed on a UI element
-      // (emote button, etc.) — let that interaction take over.
       if (currentlyOver && currentlyOver.length > 0) return;
 
       this.pointerId = pointer.id;
@@ -34,8 +65,7 @@ export class VirtualJoystick {
       this.originX = pointer.x;
       this.originY = pointer.y;
 
-      this.base.setPosition(pointer.x, pointer.y).setVisible(true);
-      this.thumb.setPosition(pointer.x, pointer.y).setVisible(true);
+      this.showAt(pointer.x, pointer.y);
     });
 
     scene.input.on('pointermove', (pointer) => {
@@ -50,13 +80,20 @@ export class VirtualJoystick {
         const nx = dx / dist;
         const ny = dy / dist;
 
-        this.thumb.setPosition(
-          this.originX + nx * clampedDist,
-          this.originY + ny * clampedDist
-        );
+        const thumbX = this.originX + nx * clampedDist;
+        const thumbY = this.originY + ny * clampedDist;
+
+        this.thumb.setPosition(thumbX, thumbY);
+        this.thumbGlow.setPosition(thumbX, thumbY);
+        this.thumbDot.setPosition(thumbX, thumbY);
 
         this.vector.x = nx * (clampedDist / this.maxRadius);
         this.vector.y = ny * (clampedDist / this.maxRadius);
+
+        // Adjust thumb opacity based on distance
+        const intensity = clampedDist / this.maxRadius;
+        this.thumb.setAlpha(0.3 + intensity * 0.3);
+        this.thumbGlow.setAlpha(0.1 + intensity * 0.15);
       }
     });
 
@@ -68,9 +105,28 @@ export class VirtualJoystick {
       this.vector.x = 0;
       this.vector.y = 0;
 
-      this.base.setVisible(false);
-      this.thumb.setVisible(false);
+      this.hideAll();
     });
+  }
+
+  showAt(x, y) {
+    this.baseOuter.setPosition(x, y).setVisible(true);
+    this.base.setPosition(x, y).setVisible(true);
+    this.crossH.setPosition(x, y).setVisible(true);
+    this.crossV.setPosition(x, y).setVisible(true);
+    this.thumb.setPosition(x, y).setVisible(true);
+    this.thumbGlow.setPosition(x, y).setVisible(true);
+    this.thumbDot.setPosition(x, y).setVisible(true);
+  }
+
+  hideAll() {
+    this.baseOuter.setVisible(false);
+    this.base.setVisible(false);
+    this.crossH.setVisible(false);
+    this.crossV.setVisible(false);
+    this.thumb.setVisible(false);
+    this.thumbGlow.setVisible(false);
+    this.thumbDot.setVisible(false);
   }
 
   getVector() {

@@ -10,13 +10,33 @@ export class CharacterSelectScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#1a1a2e');
+    this.cameras.main.setBackgroundColor('#0a0a1a');
 
+    // Background particles
+    this.particles = [];
+    for (let i = 0; i < 25; i++) {
+      const x = Phaser.Math.Between(0, 960);
+      const y = Phaser.Math.Between(0, 540);
+      const size = Phaser.Math.Between(1, 2);
+      const alpha = 0.05 + Math.random() * 0.15;
+      const color = Phaser.Math.RND.pick([0x334477, 0x443366, 0x223355]);
+      const p = this.add.rectangle(x, y, size, size, color, alpha);
+      p._vy = -0.05 - Math.random() * 0.1;
+      p._vx = (Math.random() - 0.5) * 0.15;
+      p._baseAlpha = alpha;
+      this.particles.push(p);
+    }
+
+    // Title with accent
+    this.add.rectangle(480, 14, 280, 2, 0x4455aa, 0.3);
     this.add.text(480, 28, 'SELECT CHARACTER', {
       fontSize: '22px',
-      color: '#ffffff',
+      color: '#eeeeff',
       fontStyle: 'bold',
+      stroke: '#0a0a1a',
+      strokeThickness: 3,
     }).setOrigin(0.5);
+    this.add.rectangle(480, 44, 200, 1, 0x333366, 0.3);
 
     // Weapon sprite key mapping
     const weaponSpriteMap = {
@@ -49,10 +69,13 @@ export class CharacterSelectScene extends Phaser.Scene {
       const elements = {};
       const isUnlocked = SaveSystem.isCharacterUnlocked(id);
 
+      // Card shadow
+      elements.shadow = this.add.rectangle(cx + 2, cardY + 2, cardW, cardH, 0x000000, 0.25);
+
       // Card background
-      const bgColor = isUnlocked ? 0x222244 : 0x1a1a22;
-      elements.card = this.add.rectangle(cx, cardY, cardW, cardH, bgColor, 0.9)
-        .setStrokeStyle(2, isUnlocked ? 0x6666aa : 0x333344);
+      const bgColor = isUnlocked ? 0x151533 : 0x0e0e1a;
+      elements.card = this.add.rectangle(cx, cardY, cardW, cardH, bgColor, 0.95)
+        .setStrokeStyle(2, isUnlocked ? 0x4455aa : 0x222233);
 
       if (isUnlocked) {
         // Character sprite
@@ -71,22 +94,24 @@ export class CharacterSelectScene extends Phaser.Scene {
 
         // Name
         elements.name = this.add.text(cx, cardY + 16, char.name, {
-          fontSize: '13px',
+          fontSize: '12px',
           color: '#ffffff',
           fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 2,
         }).setOrigin(0.5);
 
         // Stats
-        elements.stats = this.add.text(cx, cardY + 36, `HP:${char.hp}  SPD:${char.speed}`, {
-          fontSize: '10px',
-          color: '#aaaacc',
+        elements.stats = this.add.text(cx, cardY + 34, `HP:${char.hp}  SPD:${char.speed}`, {
+          fontSize: '9px',
+          color: '#8899bb',
         }).setOrigin(0.5);
 
         // Weapon name
         const weaponName = char.startingWeapon.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
-        elements.weaponText = this.add.text(cx, cardY + 52, weaponName, {
-          fontSize: '9px',
-          color: '#8888bb',
+        elements.weaponText = this.add.text(cx, cardY + 50, weaponName, {
+          fontSize: '8px',
+          color: '#6677aa',
         }).setOrigin(0.5);
 
         // Cosmetic indicator
@@ -95,8 +120,9 @@ export class CharacterSelectScene extends Phaser.Scene {
           const cos = COSMETICS[equipped];
           if (cos) {
             this.add.text(cx, cardY + 66, cos.name, {
-              fontSize: '8px',
-              color: '#ffaa44',
+              fontSize: '7px',
+              color: '#cc8833',
+              fontStyle: 'bold',
             }).setOrigin(0.5);
           }
         }
@@ -116,14 +142,14 @@ export class CharacterSelectScene extends Phaser.Scene {
         // Find unlock level
         const unlockLevel = this.getUnlockLevel('character', id);
         this.add.text(cx, cardY + 16, char.name, {
-          fontSize: '13px',
-          color: '#555566',
+          fontSize: '12px',
+          color: '#444455',
           fontStyle: 'bold',
         }).setOrigin(0.5);
 
         this.add.text(cx, cardY + 36, `Unlocks at Lv.${unlockLevel}`, {
-          fontSize: '10px',
-          color: '#666677',
+          fontSize: '9px',
+          color: '#555566',
         }).setOrigin(0.5);
       }
 
@@ -133,31 +159,39 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     // Preview area
     this.previewSprite = null;
-    this.previewBg = this.add.rectangle(480, 380, 400, 130, 0x111133, 0.7)
-      .setStrokeStyle(1, 0x444466);
+
+    // Preview panel shadow
+    this.add.rectangle(482, 382, 400, 130, 0x000000, 0.25);
+    // Preview panel
+    this.previewBg = this.add.rectangle(480, 380, 400, 130, 0x0d0d22, 0.85)
+      .setStrokeStyle(2, 0x333366);
+    // Preview panel header accent
+    this.add.rectangle(480, 318, 200, 1, 0x444477, 0.3);
 
     this.previewName = this.add.text(510, 345, '', {
-      fontSize: '20px',
-      color: '#ffffff',
+      fontSize: '18px',
+      color: '#eeeeff',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0.5).setDepth(20);
 
     this.previewStats = this.add.text(510, 400, '', {
-      fontSize: '13px',
-      color: '#aaaacc',
+      fontSize: '12px',
+      color: '#8899bb',
       lineSpacing: 6,
     }).setOrigin(0.5).setDepth(20);
 
     // Cosmetic toggle area
     this.cosmeticText = this.add.text(680, 345, '', {
       fontSize: '11px',
-      color: '#ffaa44',
+      color: '#cc8833',
       fontStyle: 'bold',
     }).setOrigin(0, 0).setDepth(20);
 
     this.cosmeticToggle = this.add.text(680, 365, '', {
       fontSize: '11px',
-      color: '#8888bb',
+      color: '#6677aa',
       lineSpacing: 4,
     }).setOrigin(0, 0).setDepth(20);
 
@@ -166,18 +200,20 @@ export class CharacterSelectScene extends Phaser.Scene {
     // Controls hint
     this.add.text(480, 495, 'A/D or arrows to browse   ENTER/SPACE to select   C to cycle cosmetics', {
       fontSize: '10px',
-      color: '#555577',
+      color: '#333355',
     }).setOrigin(0.5);
 
     // Back button
     const backBtn = this.add.text(40, 500, '< BACK', {
-      fontSize: '16px',
-      color: '#aa6666',
+      fontSize: '14px',
+      color: '#886677',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
 
-    backBtn.on('pointerover', () => backBtn.setColor('#ff8888'));
-    backBtn.on('pointerout', () => backBtn.setColor('#aa6666'));
+    backBtn.on('pointerover', () => backBtn.setColor('#cc8899'));
+    backBtn.on('pointerout', () => backBtn.setColor('#8866777'));
     backBtn.on('pointerdown', () => {
       this.sound.play('sfx_buttonClick', { volume: 0.4 });
       this.scene.start('Menu');
@@ -221,11 +257,13 @@ export class CharacterSelectScene extends Phaser.Scene {
     // Update card highlights
     this.cardElements.forEach(({ elements, isUnlocked }, i) => {
       if (i === index && isUnlocked) {
-        elements.card.setStrokeStyle(3, 0xaaaaff);
-        elements.card.setFillStyle(0x333366, 1);
+        elements.card.setStrokeStyle(3, 0x7788cc);
+        elements.card.setFillStyle(0x222244, 1);
+        if (elements.shadow) elements.shadow.setAlpha(0.4);
       } else {
-        elements.card.setStrokeStyle(2, isUnlocked ? 0x6666aa : 0x333344);
-        elements.card.setFillStyle(isUnlocked ? 0x222244 : 0x1a1a22, 0.9);
+        elements.card.setStrokeStyle(2, isUnlocked ? 0x4455aa : 0x222233);
+        elements.card.setFillStyle(isUnlocked ? 0x151533 : 0x0e0e1a, 0.95);
+        if (elements.shadow) elements.shadow.setAlpha(0.25);
       }
     });
 
@@ -290,7 +328,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     unlocked.forEach(cos => {
       const isEquipped = equipped === cos.id;
       const label = isEquipped ? `[ON] ${cos.name}` : `[OFF] ${cos.name}`;
-      const color = isEquipped ? '#ffaa44' : '#666688';
+      const color = isEquipped ? '#cc8833' : '#556688';
 
       const btn = this.add.text(680, y, label, {
         fontSize: '10px',
@@ -324,13 +362,10 @@ export class CharacterSelectScene extends Phaser.Scene {
     const currentIdx = unlocked.findIndex(c => c.id === current);
 
     if (currentIdx === -1) {
-      // Nothing equipped, equip first
       SaveSystem.equipCosmetic(id, unlocked[0].id);
     } else if (currentIdx === unlocked.length - 1) {
-      // Last one, unequip
       SaveSystem.equipCosmetic(id, null);
     } else {
-      // Next one
       SaveSystem.equipCosmetic(id, unlocked[currentIdx + 1].id);
     }
 
@@ -341,7 +376,6 @@ export class CharacterSelectScene extends Phaser.Scene {
   confirmSelection() {
     const { isUnlocked } = this.cardElements[this.selectedIndex];
     if (!isUnlocked) {
-      // Play error sound or flash
       this.cameras.main.shake(50, 0.002);
       return;
     }
@@ -349,5 +383,16 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.sound.play('sfx_buttonClick', { volume: 0.4 });
     this.registry.set('character', this.charIds[this.selectedIndex]);
     this.scene.start('LevelSelect');
+  }
+
+  update(time) {
+    for (const p of this.particles) {
+      p.x += p._vx;
+      p.y += p._vy;
+      if (p.y < -5) p.y = 545;
+      if (p.x < -5) p.x = 965;
+      if (p.x > 965) p.x = -5;
+      p.alpha = p._baseAlpha + Math.sin(time * 0.001 + p.x) * 0.08;
+    }
   }
 }

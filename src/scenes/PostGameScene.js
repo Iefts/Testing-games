@@ -14,15 +14,34 @@ export class PostGameScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#1a1a2e');
+    this.cameras.main.setBackgroundColor('#0a0a1a');
     SaveSystem.incrementGamesPlayed();
 
-    // Title
-    this.add.text(480, 28, 'RESULTS', {
-      fontSize: '24px',
-      color: '#ffffff',
+    // Background particles
+    this.particles = [];
+    for (let i = 0; i < 20; i++) {
+      const x = Phaser.Math.Between(0, 960);
+      const y = Phaser.Math.Between(0, 540);
+      const size = Phaser.Math.Between(1, 2);
+      const alpha = 0.05 + Math.random() * 0.15;
+      const color = Phaser.Math.RND.pick([0x334477, 0x443366, 0x223355]);
+      const p = this.add.rectangle(x, y, size, size, color, alpha);
+      p._vy = -0.05 - Math.random() * 0.1;
+      p._vx = (Math.random() - 0.5) * 0.15;
+      p._baseAlpha = alpha;
+      this.particles.push(p);
+    }
+
+    // Title with accent
+    this.add.rectangle(480, 12, 180, 2, 0x4455aa, 0.3);
+    this.add.text(480, 26, 'RESULTS', {
+      fontSize: '22px',
+      color: '#eeeeff',
       fontStyle: 'bold',
+      stroke: '#0a0a1a',
+      strokeThickness: 3,
     }).setOrigin(0.5);
+    this.add.rectangle(480, 42, 120, 1, 0x333366, 0.3);
 
     // --- Calculate XP breakdown ---
     const kills = this.stats.kills || 0;
@@ -60,14 +79,30 @@ export class PostGameScene extends Phaser.Scene {
     const boostMultiplier = hasBoost ? 1.5 : 1;
     total = Math.floor(total * boostMultiplier);
 
-    // --- Display XP Breakdown ---
+    // --- Left panel: XP Breakdown ---
     const leftX = 240;
-    let rowY = 70;
+    const panelW = 300;
+
+    // Panel background
+    this.add.rectangle(leftX + 40 + 1, 255 + 1, panelW, 380, 0x000000, 0.2);
+    this.add.rectangle(leftX + 40, 255, panelW, 380, 0x0d0d22, 0.8)
+      .setStrokeStyle(1, 0x333366);
+
+    let rowY = 80;
     const rowGap = 24;
 
-    const addRow = (label, value, color = '#cccccc') => {
-      this.add.text(leftX - 80, rowY, label, { fontSize: '14px', color: '#888899' }).setOrigin(0, 0.5);
-      this.add.text(leftX + 160, rowY, `+${value} XP`, { fontSize: '14px', color }).setOrigin(1, 0.5);
+    const addRow = (label, value, color = '#ccccdd') => {
+      this.add.text(leftX - 80, rowY, label, {
+        fontSize: '13px',
+        color: '#6677aa',
+      }).setOrigin(0, 0.5);
+      this.add.text(leftX + 160, rowY, `+${value} XP`, {
+        fontSize: '13px',
+        color,
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 1,
+      }).setOrigin(1, 0.5);
       rowY += rowGap;
     };
 
@@ -80,64 +115,80 @@ export class PostGameScene extends Phaser.Scene {
       addRow('Victory Bonus', `x2`, '#44cc44');
     }
     if (hasBoost) {
-      addRow('XP Boost', 'x1.5', '#66aaff');
+      addRow('XP Boost', 'x1.5', '#55aaff');
     }
 
     // Separator
     rowY += 4;
-    this.add.rectangle(leftX + 40, rowY, 280, 1, 0x444466);
-    rowY += 12;
+    this.add.rectangle(leftX + 40, rowY, panelW - 30, 1, 0x333366, 0.4);
+    rowY += 14;
 
-    // Challenges section
+    // Challenges section header
+    this.add.rectangle(leftX + 40, rowY + 2, panelW - 20, 20, 0x1a1a2a, 0.5);
     this.add.text(leftX - 80, rowY, 'CHALLENGES', {
-      fontSize: '13px',
-      color: '#ffcc44',
+      fontSize: '12px',
+      color: '#ddaa33',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 1,
     });
-    rowY += 22;
+    rowY += 24;
 
     challengeResults.forEach(c => {
       const check = c.completed ? '[x]' : '[ ]';
-      const color = c.completed ? '#44cc44' : '#666666';
+      const color = c.completed ? '#44cc44' : '#555566';
       this.add.text(leftX - 80, rowY, `${check} ${c.description}`, {
-        fontSize: '12px',
+        fontSize: '11px',
         color,
       });
       if (c.completed) {
         this.add.text(leftX + 160, rowY, `+${c.xpReward} XP`, {
-          fontSize: '12px',
+          fontSize: '11px',
           color: '#44cc44',
+          fontStyle: 'bold',
         }).setOrigin(1, 0);
       }
       rowY += 20;
     });
 
     // Total XP
-    rowY += 10;
-    this.add.rectangle(leftX + 40, rowY, 280, 1, 0x6666aa);
+    rowY += 8;
+    this.add.rectangle(leftX + 40, rowY, panelW - 30, 1, 0x5566aa, 0.4);
     rowY += 16;
 
+    this.add.rectangle(leftX + 40, rowY + 4, panelW - 20, 24, 0x1a1a3a, 0.5);
     this.add.text(leftX - 80, rowY, 'TOTAL XP', {
-      fontSize: '16px',
-      color: '#ffffff',
+      fontSize: '15px',
+      color: '#eeeeff',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     });
     this.add.text(leftX + 160, rowY, `+${total}`, {
-      fontSize: '16px',
+      fontSize: '15px',
       color: '#ffcc44',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(1, 0);
 
-    // --- Right side: XP Bar Animation ---
+    // --- Right panel: XP Bar Animation ---
     const barX = 580;
     const barY = 100;
     const barW = 280;
     const barH = 20;
 
+    // Right panel background
+    this.add.rectangle(barX + barW / 2 + 1, 255 + 1, panelW, 380, 0x000000, 0.2);
+    this.add.rectangle(barX + barW / 2, 255, panelW, 380, 0x0d0d22, 0.8)
+      .setStrokeStyle(1, 0x333366);
+
     this.add.text(barX + barW / 2, barY - 20, 'PLAYER LEVEL', {
-      fontSize: '14px',
-      color: '#aaaacc',
+      fontSize: '13px',
+      color: '#8899bb',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0.5);
 
     const prevLevel = SaveSystem.level;
@@ -154,45 +205,53 @@ export class PostGameScene extends Phaser.Scene {
       if (result) rewards.push({ level: lv, ...result });
     }
 
-    // Draw XP bar background
-    this.add.rectangle(barX, barY, barW, barH, 0x111133).setOrigin(0);
-    this.add.rectangle(barX, barY, barW, barH, 0x000000, 0).setOrigin(0).setStrokeStyle(2, 0x4444aa);
+    // XP bar shadow
+    this.add.rectangle(barX + 1, barY + 1, barW, barH, 0x000000, 0.3).setOrigin(0);
+    // XP bar background
+    this.add.rectangle(barX, barY, barW, barH, 0x0d0d22).setOrigin(0);
+    this.add.rectangle(barX, barY, barW, barH, 0x000000, 0).setOrigin(0).setStrokeStyle(2, 0x3344aa);
 
     // Animated fill bar
     const startFill = prevXP / prevMax;
-    this.xpBarFill = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * startFill, barH - 4, 0x44aaff).setOrigin(0);
+    this.xpBarFill = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * startFill, barH - 4, 0x3388dd).setOrigin(0);
+    // Highlight top half
+    this.xpBarHighlight = this.add.rectangle(barX + 2, barY + 2, (barW - 4) * startFill, (barH - 4) / 2, 0x55aaff, 0.3).setOrigin(0);
 
     // Level text
     this.levelText = this.add.text(barX + barW / 2, barY + barH / 2, `Lv.${prevLevel}`, {
       fontSize: '12px',
       color: '#ffffff',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0.5);
 
-    this.xpText = this.add.text(barX + barW / 2, barY + barH + 8, `${prevXP} / ${prevMax}`, {
-      fontSize: '11px',
-      color: '#8888aa',
+    this.xpText = this.add.text(barX + barW / 2, barY + barH + 10, `${prevXP} / ${prevMax}`, {
+      fontSize: '10px',
+      color: '#6677aa',
     }).setOrigin(0.5);
 
     // Animate the XP bar
     this.animateXPBar(barX, barW, barH, prevLevel, prevXP, prevMax, total, levelUps);
 
     // Show rewards below XP bar
-    let rewardY = barY + 50;
+    let rewardY = barY + 56;
     if (rewards.length > 0) {
+      this.add.rectangle(barX + barW / 2, rewardY + 2, 200, 20, 0x1a1a2a, 0.5);
       this.add.text(barX + barW / 2, rewardY, 'REWARDS', {
-        fontSize: '14px',
-        color: '#ffcc44',
+        fontSize: '13px',
+        color: '#ddaa33',
         fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 2,
       }).setOrigin(0.5);
-      rewardY += 24;
+      rewardY += 26;
 
       rewards.forEach(r => {
-        const icon = r.type === 'coins' ? 'coin' : (r.type === 'cosmetic' ? 'sparkle' : 'star');
-        const color = r.type === 'coins' ? '#ddaa22' : (r.type === 'character' ? '#44aaff' : (r.type === 'level' ? '#44cc44' : '#ffaa44'));
+        const color = r.type === 'coins' ? '#ddaa22' : (r.type === 'character' ? '#55aaff' : (r.type === 'level' ? '#44cc44' : '#cc8833'));
 
         this.add.text(barX + barW / 2, rewardY, `Lv.${r.level}: ${r.description}`, {
-          fontSize: '12px',
+          fontSize: '11px',
           color,
           align: 'center',
         }).setOrigin(0.5);
@@ -206,28 +265,39 @@ export class PostGameScene extends Phaser.Scene {
       .reduce((sum, r) => sum + r.amount, 0);
     if (coinsFromRewards > 0) {
       this.add.text(barX + barW / 2, rewardY + 10, `+${coinsFromRewards} Coins earned!`, {
-        fontSize: '13px',
+        fontSize: '12px',
         color: '#ddaa22',
         fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 2,
       }).setOrigin(0.5);
     }
 
-    // Continue button
-    const continueBtn = this.add.text(480, 490, 'CONTINUE TO MENU', {
-      fontSize: '20px',
-      color: '#44aaff',
+    // --- Continue button (polished) ---
+    const btnY = 490;
+    this.add.rectangle(482, btnY + 2, 240, 44, 0x000000, 0.3);
+    this.add.rectangle(480, btnY, 240, 44, 0x000000, 0)
+      .setStrokeStyle(2, 0x4488cc);
+
+    const continueBtn = this.add.text(480, btnY, 'CONTINUE TO MENU', {
+      fontSize: '18px',
+      color: '#55bbff',
       fontStyle: 'bold',
-      backgroundColor: '#333355',
-      padding: { x: 32, y: 10 },
+      backgroundColor: '#1a2244',
+      padding: { x: 28, y: 10 },
+      stroke: '#000000',
+      strokeThickness: 2,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     continueBtn.on('pointerover', () => {
-      continueBtn.setColor('#88ccff');
-      continueBtn.setBackgroundColor('#444466');
+      continueBtn.setColor('#88ddff');
+      continueBtn.setBackgroundColor('#223355');
+      continueBtn.setScale(1.03);
     });
     continueBtn.on('pointerout', () => {
-      continueBtn.setColor('#44aaff');
-      continueBtn.setBackgroundColor('#333355');
+      continueBtn.setColor('#55bbff');
+      continueBtn.setBackgroundColor('#1a2244');
+      continueBtn.setScale(1.0);
     });
     continueBtn.on('pointerdown', () => {
       this.sound.play('sfx_buttonClick', { volume: 0.4 });
@@ -238,10 +308,12 @@ export class PostGameScene extends Phaser.Scene {
       this.sound.play('sfx_buttonClick', { volume: 0.4 });
       this.scene.start('Menu');
     });
+
+    // Fade in
+    this.cameras.main.fadeIn(300);
   }
 
   animateXPBar(barX, barW, barH, startLevel, startXP, startMax, totalXP, levelUps) {
-    // Simple tween animation — fill the bar over 1.5 seconds
     const endLevel = SaveSystem.level;
     const endXP = SaveSystem.xp;
     const endMax = SaveSystem.xpToNext;
@@ -249,10 +321,9 @@ export class PostGameScene extends Phaser.Scene {
     const fillW = barW - 4;
 
     if (levelUps.length === 0) {
-      // No level up — just animate fill
       const endFill = endXP / endMax;
       this.tweens.add({
-        targets: this.xpBarFill,
+        targets: [this.xpBarFill, this.xpBarHighlight],
         width: fillW * endFill,
         duration: 1500,
         ease: 'Power2',
@@ -261,31 +332,39 @@ export class PostGameScene extends Phaser.Scene {
         },
       });
     } else {
-      // Level up animation — fill to max, flash, then show new level
-      // First fill to full
       this.tweens.add({
-        targets: this.xpBarFill,
+        targets: [this.xpBarFill, this.xpBarHighlight],
         width: fillW,
         duration: 800,
         ease: 'Power2',
         onComplete: () => {
-          // Flash effect
           this.cameras.main.flash(200, 255, 255, 100);
           this.sound.play('sfx_levelUp', { volume: 0.4 });
 
-          // Reset bar and show final state
           this.xpBarFill.width = 0;
+          this.xpBarHighlight.width = 0;
           this.levelText.setText(`Lv.${endLevel}`);
           this.xpText.setText(`${endXP} / ${endMax}`);
 
           this.tweens.add({
-            targets: this.xpBarFill,
+            targets: [this.xpBarFill, this.xpBarHighlight],
             width: fillW * (endXP / endMax),
             duration: 600,
             ease: 'Power2',
           });
         },
       });
+    }
+  }
+
+  update(time) {
+    for (const p of this.particles) {
+      p.x += p._vx;
+      p.y += p._vy;
+      if (p.y < -5) p.y = 545;
+      if (p.x < -5) p.x = 965;
+      if (p.x > 965) p.x = -5;
+      p.alpha = p._baseAlpha + Math.sin(time * 0.001 + p.x) * 0.08;
     }
   }
 }

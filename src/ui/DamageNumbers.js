@@ -4,23 +4,43 @@ export class DamageNumbers {
   }
 
   show(x, y, amount, color = '#ffffff') {
-    const text = this.scene.add.text(x, y - 8, Math.round(amount).toString(), {
-      fontSize: '8px',
+    const rounded = Math.round(amount);
+    const isBig = rounded >= 20;
+    const fontSize = isBig ? '10px' : '8px';
+
+    const text = this.scene.add.text(x, y - 8, rounded.toString(), {
+      fontSize,
       fontFamily: 'monospace',
+      fontStyle: isBig ? 'bold' : 'normal',
       color,
       stroke: '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5, 1).setDepth(1000);
 
     // Random horizontal offset for variety
-    const offsetX = Phaser.Math.Between(-6, 6);
+    const offsetX = Phaser.Math.Between(-8, 8);
+
+    // Bigger hits float higher and last longer
+    const floatDist = isBig ? 28 : 20;
+    const duration = isBig ? 750 : 550;
+
+    // Scale pop for big hits
+    if (isBig) {
+      text.setScale(1.3);
+      this.scene.tweens.add({
+        targets: text,
+        scale: 1,
+        duration: 150,
+        ease: 'Back.easeOut',
+      });
+    }
 
     this.scene.tweens.add({
       targets: text,
-      y: y - 24,
+      y: y - floatDist,
       x: x + offsetX,
       alpha: 0,
-      duration: 600,
+      duration,
       ease: 'Power2',
       onComplete: () => text.destroy(),
     });
