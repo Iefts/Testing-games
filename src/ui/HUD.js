@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { UPGRADES } from '../config/Upgrades.js';
-import { TIER_COLORS } from '../systems/UpgradeManager.js';
+import { TIER_COLORS, EVOLVED_BORDER_COLOR } from '../systems/UpgradeManager.js';
+import { EVOLUTIONS } from '../config/Evolutions.js';
 
 export class HUD {
   constructor(scene) {
@@ -117,7 +118,7 @@ export class HUD {
     }
   }
 
-  updateUpgradeIcons(acquired) {
+  updateUpgradeIcons(acquired, evolved = {}) {
     // Clean up old icons
     this.filledIcons.forEach((slot) => {
       if (slot.icon) slot.icon.destroy();
@@ -132,6 +133,41 @@ export class HUD {
 
     let damageIdx = 0;
     let utilityIdx = 0;
+
+    // Evolved weapons get placed first in the damage row so they're visually prominent.
+    Object.keys(evolved).forEach((evoId) => {
+      if (!evolved[evoId]) return;
+      const evo = EVOLUTIONS[evoId];
+      if (!evo) return;
+
+      const row = 0;
+      const col = damageIdx;
+      if (col >= this.gridCols) return;
+      damageIdx++;
+
+      const x = this.uiGridStartX + col * (this.uiCellSize + this.uiGap);
+      const y = this.uiGridStartY + row * (this.uiCellSize + this.uiGap);
+
+      const borderIdx = row * this.gridCols + col;
+      this.gridBorders[borderIdx].setStrokeStyle(2, EVOLVED_BORDER_COLOR);
+      this.gridBorders[borderIdx].setFillStyle(0x1a1408, 1);
+
+      const icon = this.scene.make.sprite({
+        x: x + this.uiCellSize / 2,
+        y: y + this.uiCellSize / 2,
+        key: evo.icon,
+        add: false,
+      });
+      icon._isUI = true;
+      icon.setDepth(501).setScale(1.2);
+      this.scene.add.existing(icon);
+
+      this.filledIcons.push({ icon });
+      this.gridElements.push(icon);
+
+      if (this.scene.uiElements) this.scene.uiElements.add(icon);
+      if (this.scene.cameras.main) this.scene.cameras.main.ignore(icon);
+    });
 
     Object.keys(acquired).forEach((id) => {
       const level = acquired[id];

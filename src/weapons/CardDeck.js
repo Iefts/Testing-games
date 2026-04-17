@@ -13,11 +13,16 @@ export class CardDeck {
     this.range = stats.range || 300;
     this.diamondBonusXP = stats.diamondBonusXP || 2;
     this.lastFired = 0;
+    this.isEvolved = false;
 
-    this.cards = scene.physics.add.group({ maxSize: 30 });
+    this.cards = scene.physics.add.group({ maxSize: 60 });
 
     // Track AoE zones for heart/club
     this.aoeZones = [];
+  }
+
+  evolve() {
+    this.isEvolved = true;
   }
 
   updateStats(stats) {
@@ -65,6 +70,21 @@ export class CardDeck {
   }
 
   fire(target, time) {
+    // Royal Flush — fan out all four suits simultaneously plus a joker.
+    if (this.isEvolved) {
+      const baseAngle = Phaser.Math.Angle.Between(
+        this.player.x, this.player.y, target.x, target.y
+      );
+      const suits = ['heart', 'spade', 'diamond', 'club', 'joker'];
+      const spread = 0.35; // ~20deg between each
+      suits.forEach((suit, i) => {
+        const offset = (i - (suits.length - 1) / 2) * spread;
+        this.spawnCard(suit, baseAngle + offset, time, suit === 'joker');
+      });
+      this.scene.sound.play('sfx_cardThrow', { volume: 0.3 });
+      return;
+    }
+
     // Pick a suit (5% joker chance)
     const isJoker = Math.random() < JOKER_CHANCE;
     // Diamond is much rarer than other suits
@@ -158,6 +178,68 @@ export class CardDeck {
       if (card.active && card.fireId === currentFireId) {
         this.recycleCard(card);
       }
+    });
+  }
+
+  spawnCard(suit, angle, time, isJoker) {
+    const textureKey = `card_${suit}`;
+    const card = this.cards.get(this.player.x, this.player.y, textureKey);
+    if (!card) return;
+
+    card.setActive(true);
+    card.setVisible(true);
+    card.body.enable = true;
+    card.body.setAllowGravity(false);
+    card.suit = suit;
+    card.cardDamage = this.getDamageForSuit(suit);
+    card.hitEnemies = new Set();
+    card.isJoker = !!isJoker;
+    card.bounces = isJoker ? 5 : 0;
+    card.diamondBonusXP = this.diamondBonusXP;
+    card.fireId = time + Math.random();
+
+    card.setRotation(angle);
+    card.setVelocity(
+      Math.cos(angle) * this.speed,
+      Math.sin(angle) * this.speed
+    );
+
+    this.scene.tweens.add({
+      targets: card,
+      angle: card.angle + 720,
+      duration: 800,
+      ease: 'Linear',
+    });
+
+    const tints = {
+      heart: 0xff4444, spade: 0xccccff, diamond: 0x44ffff, club: 0x44cc44, joker: 0xffdd00,
+    };
+    card.setTint(tints[suit]);
+
+    const particles = this.scene.add.particles(card.x, card.y, 'bullet', {
+      speed: { min: 5, max: 15 },
+      scale: { start: 0.8, end: 0 },
+      lifespan: 280,
+      quantity: 1,
+      frequency: 40,
+      tint: [tints[suit], 0xffffff, 0xffdd88],
+      emitting: true,
+    });
+    card.trailParticles = particles;
+
+    const trailUpdate = this.scene.time.addEvent({
+      delay: 30,
+      loop: true,
+      callback: () => {
+        if (card.active) particles.setPosition(card.x, card.y);
+      },
+    });
+    card.trailUpdate = trailUpdate;
+
+    const lifetime = (this.range / this.speed) * 1000;
+    const currentFireId = card.fireId;
+    this.scene.time.delayedCall(lifetime, () => {
+      if (card.active && card.fireId === currentFireId) this.recycleCard(card);
     });
   }
 

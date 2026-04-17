@@ -12,33 +12,40 @@ export class LevelUpScene extends Phaser.Scene {
   }
 
   create() {
+    const hasEvolution = this.upgrades.some((u) => u.isEvolution);
+
     // Dim overlay with subtle gradient effect (darker edges)
     this.add.rectangle(480, 270, 960, 540, 0x000000, 0.65)
       .setDepth(190);
 
-    // Decorative top accent line
-    this.add.rectangle(480, 30, 300, 2, 0xffdd44, 0.5).setDepth(200);
-    this.add.rectangle(480, 32, 180, 1, 0xffdd44, 0.25).setDepth(200);
+    // Decorative top accent line — warmer gold when an evolution is on offer
+    const accentColor = hasEvolution ? 0xffbb44 : 0xffdd44;
+    this.add.rectangle(480, 30, 300, 2, accentColor, 0.5).setDepth(200);
+    this.add.rectangle(480, 32, 180, 1, accentColor, 0.25).setDepth(200);
+
+    const titleText = hasEvolution ? 'EVOLUTION!' : 'LEVEL UP!';
+    const titleColor = hasEvolution ? '#ffcc44' : '#ffdd44';
+    const titleGlowColor = hasEvolution ? '#885500' : '#aa8800';
 
     // Title glow
-    this.titleGlow = this.add.text(480, 56, 'LEVEL UP!', {
+    this.titleGlow = this.add.text(480, 56, titleText, {
       fontSize: '36px',
-      color: '#aa8800',
+      color: titleGlowColor,
       fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(200).setAlpha(0.3);
 
     // Title
-    this.add.text(480, 56, 'LEVEL UP!', {
+    this.add.text(480, 56, titleText, {
       fontSize: '32px',
-      color: '#ffdd44',
+      color: titleColor,
       fontStyle: 'bold',
       stroke: '#000000',
       strokeThickness: 4,
     }).setOrigin(0.5).setDepth(200);
 
-    this.add.text(480, 88, 'Choose an upgrade', {
+    this.add.text(480, 88, hasEvolution ? 'Your power awakens' : 'Choose an upgrade', {
       fontSize: '13px',
-      color: '#9999aa',
+      color: hasEvolution ? '#ffcc99' : '#9999aa',
       stroke: '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(200);

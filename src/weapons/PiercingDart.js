@@ -96,6 +96,17 @@ export class PiercingDart {
     });
   }
 
+  destroy() {
+    this.destroyed = true;
+    this.darts.getChildren().forEach((d) => {
+      if (d.active) {
+        d.setActive(false);
+        d.setVisible(false);
+        if (d.body) d.body.enable = false;
+      }
+    });
+  }
+
   setupCollision(enemies) {
     this.scene.physics.add.overlap(
       this.darts,

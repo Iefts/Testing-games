@@ -202,7 +202,7 @@ export class SpawnSystem {
     arrow.setVisible(true);
     arrow.body.enable = true;
     arrow.body.setAllowGravity(false);
-    arrow.damage = enemy.damage;
+    arrow.damage = Math.ceil(enemy.damage / 2);
 
     const angle = Phaser.Math.Angle.Between(
       enemy.x, enemy.y,

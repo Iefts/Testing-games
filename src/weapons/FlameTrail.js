@@ -109,6 +109,12 @@ export class FlameTrail {
     }
   }
 
+  destroy() {
+    this.destroyed = true;
+    this.flameZones.forEach((z) => z.destroy());
+    this.flameZones = [];
+  }
+
   setupCollision(enemies) {
     this.scene.time.addEvent({
       delay: 500,

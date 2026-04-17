@@ -11,6 +11,7 @@ export class BugSwarm {
 
     this.swarms = []; // array of swarm objects
     this.damageTickRate = 400; // ms between damage ticks per swarm
+    this.isEvolved = false;
   }
 
   updateStats(stats) {
@@ -26,6 +27,17 @@ export class BugSwarm {
     // Update existing swarms' bug counts
     this.swarms.forEach((swarm) => {
       this.adjustBugCount(swarm);
+    });
+  }
+
+  evolve() {
+    this.isEvolved = true;
+    this.damageTickRate = 180;
+    // Gild existing bugs with a shimmering tint
+    this.swarms.forEach((swarm) => {
+      swarm.bugs.forEach((bug) => {
+        if (bug.active) bug.setTint(0xffcc44);
+      });
     });
   }
 
@@ -183,6 +195,7 @@ export class BugSwarm {
       );
       bug.body.setAllowGravity(false);
       bug.setDepth(4);
+      if (this.isEvolved) bug.setTint(0xffcc44);
       swarm.bugs.push(bug);
     }
 
@@ -201,6 +214,7 @@ export class BugSwarm {
       );
       bug.body.setAllowGravity(false);
       bug.setDepth(4);
+      if (this.isEvolved) bug.setTint(0xffcc44);
       swarm.bugs.push(bug);
     }
   }

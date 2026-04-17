@@ -8,6 +8,7 @@ import { SpawnSystem } from '../systems/SpawnSystem.js';
 import { XPSystem } from '../systems/XPSystem.js';
 import { TimerSystem } from '../systems/TimerSystem.js';
 import { UpgradeManager } from '../systems/UpgradeManager.js';
+import { EVOLUTIONS } from '../config/Evolutions.js';
 import { Revolver } from '../weapons/Revolver.js';
 import { Rapier } from '../weapons/Rapier.js';
 import { DamageAura } from '../weapons/DamageAura.js';
@@ -697,6 +698,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   applyUpgrade(upgrade) {
+    if (upgrade.isEvolution) {
+      this.applyEvolution(upgrade);
+      this.hud.updateUpgradeIcons(this.upgradeManager.acquired, this.upgradeManager.evolved);
+      return;
+    }
+
     // Rare upgrades apply twice (capped at maxLevel by UpgradeManager)
     const times = upgrade.isRare ? 2 : 1;
 
@@ -705,7 +712,80 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Refresh HUD upgrade icons
-    this.hud.updateUpgradeIcons(this.upgradeManager.acquired);
+    this.hud.updateUpgradeIcons(this.upgradeManager.acquired, this.upgradeManager.evolved);
+  }
+
+  applyEvolution(upgrade) {
+    const evo = EVOLUTIONS[upgrade.id];
+    if (!evo) return;
+
+    // Screen flash + shake for drama
+    this.cameras.main.flash(400, 255, 230, 140);
+    this.cameras.main.shake(180, 0.002);
+    this.sound.play('sfx_victory', { volume: 0.35 });
+
+    // Burst at player
+    const burst = this.add.particles(this.player.x, this.player.y, 'bullet', {
+      speed: { min: 80, max: 240 },
+      scale: { start: 1.5, end: 0 },
+      lifespan: 700,
+      quantity: 40,
+      tint: [0xffdd44, 0xffffff, 0xffaa22, 0xff4400],
+      emitting: false,
+    });
+    burst.setDepth(60);
+    burst.explode();
+    this.time.delayedCall(800, () => burst.destroy());
+
+    // Transform the target weapon
+    const targetWeapon = this.getWeaponForUpgradeId(evo.target);
+    if (targetWeapon) {
+      if (typeof targetWeapon.evolve === 'function') targetWeapon.evolve();
+      if (typeof targetWeapon.updateStats === 'function' && evo.evolvedStats) {
+        targetWeapon.updateStats(evo.evolvedStats);
+      }
+      targetWeapon._evolutionId = evo.id;
+    }
+
+    // Remove the consumed partner (weapon or passive effect)
+    this.removeUpgradeEffect(evo.consume);
+
+    // Mark evolved and clear the two base upgrade slots in the manager
+    this.upgradeManager.applyEvolution(evo.id);
+  }
+
+  getWeaponForUpgradeId(upgradeId) {
+    // Starting weapon upgrades map to this.startingWeapon
+    if (upgradeId === 'revolverUp' || upgradeId === 'rapierUp' || upgradeId === 'cardDeckUp'
+      || upgradeId === 'bloodOrbUp' || upgradeId === 'snakeSwordUp' || upgradeId === 'laserDronesUp') {
+      return this.startingWeapon;
+    }
+    // Universal damage upgrades map to upgradeWeapons[id]
+    return this.upgradeWeapons[upgradeId] || null;
+  }
+
+  removeUpgradeEffect(upgradeId) {
+    // Passives: undo their effect
+    if (upgradeId === 'magnetRange') {
+      this.xpSystem.magnetRadius = 0;
+      return;
+    }
+    if (upgradeId === 'speedBoost') {
+      this.player.speed = CHARACTERS[this.characterId].speed;
+      return;
+    }
+    if (upgradeId === 'xpBoost') {
+      this.xpSystem.xpMultiplier = 1;
+      return;
+    }
+    // Weapon upgrades: remove the weapon instance
+    const weapon = this.upgradeWeapons[upgradeId];
+    if (!weapon) return;
+    this.weapons = this.weapons.filter((w) => w !== weapon);
+    delete this.upgradeWeapons[upgradeId];
+    if (typeof weapon.destroy === 'function') {
+      weapon.destroy();
+    }
   }
 
   applySingleUpgrade(upgrade) {

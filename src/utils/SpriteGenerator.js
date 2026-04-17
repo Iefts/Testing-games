@@ -56,6 +56,44 @@ export function generateSprites(scene) {
   generateLockIcon(scene);
   generateCrownAccessory(scene);
   generatePaletteSwaps(scene);
+  generateEvolutionIcons(scene);
+}
+
+function generateEvolutionIcons(scene) {
+  const W = 14, H = 14;
+  const icons = [
+    // id,            centerColor, glowColor, accentColor
+    ['evo_infernalHalo',     0xffaa22, 0xff4400, 0xffffcc],
+    ['evo_lanceCavalry',     0xffee88, 0xffaa22, 0xffffff],
+    ['evo_tempestRain',      0xaaeeff, 0x4466cc, 0xffffff],
+    ['evo_locustPlague',     0xffcc44, 0x66dd44, 0xffffff],
+    ['evo_hailstorm',        0xaaddff, 0x3366aa, 0xffffff],
+    ['evo_phantomRapier',    0xccddff, 0x6688cc, 0xffffff],
+    ['evo_royalFlush',       0xffdd44, 0xcc1111, 0xffffff],
+    ['evo_crimsonNova',      0xff3344, 0x880022, 0xffeeee],
+    ['evo_hydraFang',        0x88ff88, 0x228822, 0xffffcc],
+    ['evo_tesseractDrones',  0xff4444, 0xffaa22, 0xffffff],
+  ];
+
+  icons.forEach(([key, center, glow, accent]) => {
+    const gfx = scene.add.graphics();
+    // Outer glow ring
+    gfx.fillStyle(glow, 1);
+    gfx.fillCircle(W / 2, H / 2, W / 2);
+    // Inner core
+    gfx.fillStyle(center, 1);
+    gfx.fillCircle(W / 2, H / 2, W / 2 - 2);
+    // Four-pointed star accent
+    gfx.fillStyle(accent, 1);
+    gfx.fillRect(W / 2 - 1, 1, 2, H - 2);
+    gfx.fillRect(1, H / 2 - 1, W - 2, 2);
+    // Tiny highlight
+    gfx.fillStyle(0xffffff, 1);
+    gfx.fillRect(W / 2 - 2, H / 2 - 2, 2, 2);
+
+    gfx.generateTexture(key, W, H);
+    gfx.destroy();
+  });
 }
 
 function generatePlayer(scene) {

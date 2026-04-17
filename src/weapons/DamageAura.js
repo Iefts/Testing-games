@@ -8,6 +8,7 @@ export class DamageAura {
     this.damage = stats.damage;
     this.tickRate = stats.tickRate;
     this.lastTick = 0;
+    this.isEvolved = false;
 
     // Visual aura circle
     this.visual = scene.add.circle(player.x, player.y, this.radius, 0x44aaff, 0.15)
@@ -32,9 +33,54 @@ export class DamageAura {
     this.visual.setRadius(this.radius);
   }
 
+  // Infernal Halo — flaming aura with embers and fire particles.
+  evolve() {
+    if (this.isEvolved) return;
+    this.isEvolved = true;
+
+    // Recolor the base aura to a searing orange/red
+    this.visual.setFillStyle(0xff4400, 0.22);
+
+    // Add a rotating inner ring for a halo feel
+    this.haloRing = this.scene.add.circle(
+      this.player.x, this.player.y, this.radius * 0.75, 0xffcc44, 0.0
+    ).setDepth(5).setStrokeStyle(3, 0xffaa33, 0.7);
+    this.scene.tweens.add({
+      targets: this.haloRing,
+      scaleX: 1.15,
+      scaleY: 1.15,
+      alpha: 0.9,
+      duration: 600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Fire particles orbiting the player
+    this.emberParticles = this.scene.add.particles(this.player.x, this.player.y, 'flame', {
+      speed: { min: 10, max: 50 },
+      scale: { start: 1.2, end: 0 },
+      lifespan: 500,
+      quantity: 2,
+      frequency: 40,
+      tint: [0xff4400, 0xffaa00, 0xffffcc, 0xcc2200],
+      angle: { min: 0, max: 360 },
+      emitting: true,
+    });
+    this.emberParticles.setDepth(6);
+  }
+
+  destroy() {
+    if (this.visual) this.visual.destroy();
+    if (this.haloRing) this.haloRing.destroy();
+    if (this.emberParticles) this.emberParticles.destroy();
+  }
+
   update(time, enemies) {
     // Follow player
     this.visual.setPosition(this.player.x, this.player.y);
+    if (this.haloRing) this.haloRing.setPosition(this.player.x, this.player.y);
+    if (this.emberParticles) this.emberParticles.setPosition(this.player.x, this.player.y);
 
     if (time < this.lastTick + this.tickRate) return;
     this.lastTick = time;

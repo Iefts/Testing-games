@@ -11,8 +11,13 @@ export class BloodOrb {
     this.lifeStealPercent = stats.lifeStealPercent || 0.15;
     this.killHealPercent = stats.killHealPercent || 0.05;
     this.lastFired = 0;
+    this.isEvolved = false;
 
-    this.orbs = scene.physics.add.group({ maxSize: 20 });
+    this.orbs = scene.physics.add.group({ maxSize: 30 });
+  }
+
+  evolve() {
+    this.isEvolved = true;
   }
 
   updateStats(stats) {
@@ -139,6 +144,7 @@ export class BloodOrb {
 
     const damage = orb.orbDamage;
     const lifeSteal = orb.lifeStealPercent;
+    const orbX = orb.x, orbY = orb.y;
 
     this.recycleOrb(orb);
 
@@ -148,6 +154,56 @@ export class BloodOrb {
     }
 
     this.scene.sound.play('sfx_hit', { volume: 0.15 });
+
+    // Crimson Nova — exploding orb AoE that damages nearby foes.
+    if (this.isEvolved) {
+      const radius = 54;
+      const novaDamage = Math.floor(damage * 0.6);
+
+      const ring = this.scene.add.circle(orbX, orbY, 12, 0xff2222, 0.8).setDepth(11);
+      this.scene.tweens.add({
+        targets: ring,
+        scaleX: radius / 12, scaleY: radius / 12,
+        alpha: 0,
+        duration: 360,
+        ease: 'Cubic.easeOut',
+        onComplete: () => ring.destroy(),
+      });
+      const innerRing = this.scene.add.circle(orbX, orbY, 8, 0xffffff, 0.9).setDepth(12);
+      this.scene.tweens.add({
+        targets: innerRing,
+        scaleX: (radius * 0.6) / 8, scaleY: (radius * 0.6) / 8,
+        alpha: 0,
+        duration: 280,
+        onComplete: () => innerRing.destroy(),
+      });
+
+      const burst = this.scene.add.particles(orbX, orbY, 'bullet', {
+        speed: { min: 60, max: 160 },
+        scale: { start: 1, end: 0 },
+        lifespan: 400,
+        quantity: 14,
+        tint: [0xff2222, 0x880000, 0xff6644, 0xffffff],
+        emitting: false,
+      });
+      burst.explode();
+      this.scene.time.delayedCall(500, () => burst.destroy());
+
+      this.enemies?.getChildren().forEach((other) => {
+        if (!other.active || other === enemy) return;
+        const dist = Phaser.Math.Distance.Between(orbX, orbY, other.x, other.y);
+        if (dist <= radius) {
+          other.takeDamage(novaDamage);
+          if (this.scene.damageNumbers) {
+            this.scene.damageNumbers.show(other.x, other.y, novaDamage, '#ff6644');
+          }
+        }
+      });
+      if (this.scene.boss && this.scene.boss.active && this.scene.hitBoss) {
+        const bDist = Phaser.Math.Distance.Between(orbX, orbY, this.scene.boss.x, this.scene.boss.y);
+        if (bDist <= radius) this.scene.hitBoss(novaDamage, '#ff6644');
+      }
+    }
 
     // Life steal heal
     const healAmount = Math.ceil(damage * lifeSteal);

@@ -116,10 +116,22 @@ export class Tornado {
     );
   }
 
+  destroy() {
+    this.destroyed = true;
+    this.tornadoes.forEach((t) => {
+      if (t.wanderEvent) t.wanderEvent.destroy();
+      if (t.updateEvent) t.updateEvent.destroy();
+      if (t.particles) t.particles.destroy();
+      if (t.active) t.destroy();
+    });
+    this.tornadoes = [];
+  }
+
   setupCollision(enemies) {
     this.enemies = enemies;
 
     this.scene.events.on('update', () => {
+      if (this.destroyed) return;
       const now = this.scene.time.now;
 
       this.tornadoes.forEach((tornado) => {

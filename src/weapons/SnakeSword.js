@@ -25,6 +25,7 @@ export class SnakeSword extends Phaser.Physics.Arcade.Sprite {
     this.lastSlash = 0;
     this.lastPoison = 0;
     this.slashing = false;
+    this.isEvolved = false;
 
     this.setVisible(true);
     this.setActive(true);
@@ -91,6 +92,11 @@ export class SnakeSword extends Phaser.Physics.Arcade.Sprite {
       if (time >= this.lastSlash + this.slashRate) {
         this.lastSlash = time;
         this.slash(nearest);
+        if (this.isEvolved) {
+          // Hydra Fang — two extra heads slash at offset angles
+          this.scene.time.delayedCall(70, () => { if (nearest.active) this.slashOffset(nearest, 0.6); });
+          this.scene.time.delayedCall(140, () => { if (nearest.active) this.slashOffset(nearest, -0.6); });
+        }
       }
     } else {
       // Ranged mode — reversed grip (snake faces outward)
@@ -98,7 +104,63 @@ export class SnakeSword extends Phaser.Physics.Arcade.Sprite {
       if (time >= this.lastPoison + this.poisonRate) {
         this.lastPoison = time;
         this.shootPoison(nearest, time);
+        if (this.isEvolved) {
+          this.scene.time.delayedCall(80, () => { if (nearest.active) this.shootPoison(nearest, time + 80, 0.3); });
+          this.scene.time.delayedCall(160, () => { if (nearest.active) this.shootPoison(nearest, time + 160, -0.3); });
+        }
       }
+    }
+  }
+
+  evolve() {
+    this.isEvolved = true;
+  }
+
+  slashOffset(target, angleOffset) {
+    // Phantom slash at an offset angle — damage-only, no sword reposition.
+    const baseAngle = Phaser.Math.Angle.Between(
+      this.player.x, this.player.y, target.x, target.y
+    );
+    const angle = baseAngle + angleOffset;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
+    const slashDist = this.slashRange;
+    const hitWidth = 14;
+
+    this.enemyGroup.getChildren().forEach((enemy) => {
+      if (!enemy.active) return;
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+      if (dist > slashDist + 10) return;
+      const dx = enemy.x - this.player.x;
+      const dy = enemy.y - this.player.y;
+      const projection = dx * cosA + dy * sinA;
+      if (projection < 0 || projection > slashDist) return;
+      const perpDist = Math.abs(dx * sinA - dy * cosA);
+      if (perpDist <= hitWidth) {
+        enemy.takeDamage(this.slashDamage);
+        if (this.scene.damageNumbers) {
+          this.scene.damageNumbers.show(enemy.x, enemy.y, this.slashDamage, '#88ff88');
+        }
+      }
+    });
+
+    // Ghost slash visual
+    for (let i = 0; i < 3; i++) {
+      const t = (i + 1) / 4;
+      const gx = this.player.x + cosA * (slashDist * t);
+      const gy = this.player.y + sinA * (slashDist * t);
+      const ghost = this.scene.add.image(gx, gy, 'snakeSword');
+      ghost.setRotation(angle);
+      ghost.setAlpha(0.5);
+      ghost.setScale(1.1);
+      ghost.setTint(0x44ff88);
+      ghost.setDepth(48);
+      this.scene.tweens.add({
+        targets: ghost,
+        alpha: 0,
+        duration: 180,
+        onComplete: () => ghost.destroy(),
+      });
     }
   }
 
@@ -247,11 +309,11 @@ export class SnakeSword extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  shootPoison(target, time) {
+  shootPoison(target, time, angleOffset = 0) {
     const angle = Phaser.Math.Angle.Between(
       this.player.x, this.player.y,
       target.x, target.y
-    );
+    ) + angleOffset;
 
     // Quick recoil animation — sword kicks back briefly
     this._shootingAnim = true;

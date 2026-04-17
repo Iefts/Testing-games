@@ -13,6 +13,8 @@ export class LaserDrones {
 
     this.lastFire = 0;
     this.lastDroneFired = 0; // alternate between drones
+    this.isEvolved = false;
+    this.droneExtras = []; // populated on evolve for the 3rd/4th drones
 
     // Create two drone sprites
     this.droneLeft = scene.add.sprite(player.x - 16, player.y, 'drone').setScale(2).setDepth(50);
@@ -41,7 +43,34 @@ export class LaserDrones {
         this.player.x + 18,
         this.player.y - 4 + bobYR
       );
+
+      // Tesseract drones orbit the player
+      if (this.isEvolved && this.droneExtras.length > 0) {
+        const orbitRadius = 26;
+        this.droneExtras.forEach((d, i) => {
+          const phase = this._bobTime * 0.6 + (i * Math.PI * 2 / this.droneExtras.length);
+          d.setPosition(
+            this.player.x + Math.cos(phase) * orbitRadius,
+            this.player.y + Math.sin(phase) * orbitRadius
+          );
+        });
+      }
     });
+  }
+
+  evolve() {
+    if (this.isEvolved) return;
+    this.isEvolved = true;
+    // Tint existing drones violet/gold
+    this.droneLeft.setTint(0xffcc44);
+    this.droneRight.setTint(0xffcc44);
+
+    // Add 2 extra orbital drones
+    for (let i = 0; i < 2; i++) {
+      const d = this.scene.add.sprite(this.player.x, this.player.y, 'drone')
+        .setScale(2).setDepth(50).setTint(0xffaa33);
+      this.droneExtras.push(d);
+    }
   }
 
   update(time, enemies) {
@@ -87,6 +116,15 @@ export class LaserDrones {
     const drone = this.lastDroneFired === 0 ? this.droneLeft : this.droneRight;
 
     this.fireLaser(drone, target, time, enemies);
+
+    // Tesseract drones — all orbital drones also fire at the target
+    if (this.isEvolved) {
+      this.droneExtras.forEach((d, i) => {
+        this.scene.time.delayedCall(60 + i * 40, () => {
+          if (target.active) this.fireLaser(d, target, this.scene.time.now, enemies);
+        });
+      });
+    }
   }
 
   findNearestEnemy(enemies) {

@@ -15,6 +15,7 @@ export class Rapier extends Phaser.Physics.Arcade.Sprite {
     this.thrustDuration = 150;
     this.lastFired = 0;
     this.thrusting = false;
+    this.isEvolved = false;
 
     this.setVisible(false);
     this.setActive(false);
@@ -31,6 +32,20 @@ export class Rapier extends Phaser.Physics.Arcade.Sprite {
 
     this.thrust(target);
     this.lastFired = time;
+
+    if (this.isEvolved) {
+      // Phantom Rapier — two ghost follow-up thrusts from a different angle
+      this.scene.time.delayedCall(80, () => {
+        if (target.active) this.thrust(target, { ghost: true, angleOffset: 0.35 });
+      });
+      this.scene.time.delayedCall(160, () => {
+        if (target.active) this.thrust(target, { ghost: true, angleOffset: -0.35 });
+      });
+    }
+  }
+
+  evolve() {
+    this.isEvolved = true;
   }
 
   findNearestEnemy(enemies) {
@@ -59,32 +74,34 @@ export class Rapier extends Phaser.Physics.Arcade.Sprite {
     return nearest;
   }
 
-  thrust(target) {
-    if (this.thrusting) return;
-    this.thrusting = true;
+  thrust(target, opts = {}) {
+    if (this.thrusting && !opts.ghost) return;
+    if (!opts.ghost) this.thrusting = true;
 
-    const angle = Phaser.Math.Angle.Between(
+    const baseAngle = Phaser.Math.Angle.Between(
       this.player.x, this.player.y,
       target.x, target.y
     );
+    const angle = baseAngle + (opts.angleOffset || 0);
 
     const cosA = Math.cos(angle);
     const sinA = Math.sin(angle);
     const thrustDist = this.range * 0.5;
 
-    // Position the rapier visual at the midpoint of the thrust line
-    const midX = this.player.x + cosA * (thrustDist * 0.5);
-    const midY = this.player.y + sinA * (thrustDist * 0.5);
+    if (!opts.ghost) {
+      // Position the rapier visual at the midpoint of the thrust line
+      const midX = this.player.x + cosA * (thrustDist * 0.5);
+      const midY = this.player.y + sinA * (thrustDist * 0.5);
 
-    this.setPosition(midX, midY);
-    this.setRotation(angle);
-    this.setVisible(true);
-    this.setActive(true);
-    this.body.enable = false; // We handle damage manually via line check
+      this.setPosition(midX, midY);
+      this.setRotation(angle);
+      this.setVisible(true);
+      this.setActive(true);
+      this.body.enable = false;
+      this.setScale(1.5);
+    }
 
-    this.setScale(1.5);
-
-    this.scene.sound.play('sfx_rapier', { volume: 0.25 });
+    this.scene.sound.play('sfx_rapier', { volume: opts.ghost ? 0.15 : 0.25 });
 
     // Line-based damage: hit all enemies along the thrust line
     const lineWidth = 8; // How close to the line an enemy must be to get hit
@@ -167,13 +184,15 @@ export class Rapier extends Phaser.Physics.Arcade.Sprite {
     sparks.explode();
     this.scene.time.delayedCall(500, () => sparks.destroy());
 
-    // Retract after thrust duration
-    this.scene.time.delayedCall(this.thrustDuration, () => {
-      this.setVisible(false);
-      this.setActive(false);
-      this.thrusting = false;
-      this.setScale(1);
-    });
+    // Retract after thrust duration (skip for ghost thrusts)
+    if (!opts.ghost) {
+      this.scene.time.delayedCall(this.thrustDuration, () => {
+        this.setVisible(false);
+        this.setActive(false);
+        this.thrusting = false;
+        this.setScale(1);
+      });
+    }
   }
 
   setupCollision(enemies) {

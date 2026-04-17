@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { UPGRADES } from '../config/Upgrades.js';
+import { EVOLUTIONS } from '../config/Evolutions.js';
 
 export const TIER_COLORS = [
   0x999999, // level 1: gray
@@ -8,6 +9,9 @@ export const TIER_COLORS = [
   0xaa44ff, // level 4: purple
   0xffdd44, // level 5: gold
 ];
+
+// Rainbow/gilded stroke used for evolved upgrade icons on the HUD grid.
+export const EVOLVED_BORDER_COLOR = 0xffddaa;
 
 export class UpgradeManager {
   constructor(scene, characterId) {
@@ -18,9 +22,33 @@ export class UpgradeManager {
     Object.keys(UPGRADES).forEach((id) => {
       this.acquired[id] = 0;
     });
+    // Track which evolutions have been claimed (prevents re-offering)
+    this.evolved = {};
+  }
+
+  // Returns evolutions the player qualifies for right now.
+  getAvailableEvolutions() {
+    const available = [];
+    Object.values(EVOLUTIONS).forEach((evo) => {
+      if (this.evolved[evo.id]) return;
+      if (evo.characterOnly && evo.characterOnly !== this.characterId) return;
+      const tgt = UPGRADES[evo.target];
+      const con = UPGRADES[evo.consume];
+      if (!tgt || !con) return;
+      if (this.acquired[evo.target] < tgt.maxLevel) return;
+      if (this.acquired[evo.consume] < con.maxLevel) return;
+      available.push({
+        ...evo,
+        isEvolution: true,
+      });
+    });
+    return available;
   }
 
   getRandomUpgrades(count = 3) {
+    // Evolutions take priority — if any are available, offer them first.
+    const evolutions = this.getAvailableEvolutions();
+
     // Count how many distinct damage and utility upgrades the player has
     let damageCount = 0;
     let utilityCount = 0;
@@ -36,7 +64,6 @@ export class UpgradeManager {
     const available = [];
     Object.keys(UPGRADES).forEach((id) => {
       const upgrade = UPGRADES[id];
-      // Skip character-specific upgrades that don't belong to this character
       if (upgrade.characterOnly && upgrade.characterOnly !== this.characterId) return;
       if (this.acquired[id] >= upgrade.maxLevel) return;
 
@@ -53,12 +80,15 @@ export class UpgradeManager {
       });
     });
 
-    // Shuffle and pick up to count
+    // Shuffle normal upgrades
     Phaser.Utils.Array.Shuffle(available);
-    const selected = available.slice(0, count);
 
-    // 4% chance each upgrade is rare (upgrades 2 levels)
+    // Fill selection: evolutions first, then normal upgrades
+    const selected = [...evolutions.slice(0, count), ...available.slice(0, Math.max(0, count - evolutions.length))];
+
+    // 4% chance each non-evolution upgrade is rare (upgrades 2 levels)
     selected.forEach((upgrade) => {
+      if (upgrade.isEvolution) return;
       if (Math.random() < 0.04) {
         upgrade.isRare = true;
         upgrade.nextLevel = Math.min(
@@ -79,6 +109,18 @@ export class UpgradeManager {
     return this.acquired[upgradeId];
   }
 
+  applyEvolution(evolutionId) {
+    const evo = EVOLUTIONS[evolutionId];
+    if (!evo) return null;
+    this.evolved[evolutionId] = true;
+    // Consume both base upgrades — they free up their HUD slot and can no
+    // longer be upgraded. The target upgrade's weapon transforms in-place via
+    // GameScene, and the consume upgrade's passive/weapon is removed entirely.
+    this.acquired[evo.target] = 0;
+    this.acquired[evo.consume] = 0;
+    return evo;
+  }
+
   getLevel(upgradeId) {
     return this.acquired[upgradeId] || 0;
   }
@@ -87,5 +129,13 @@ export class UpgradeManager {
     const level = this.acquired[upgradeId];
     if (level <= 0) return null;
     return UPGRADES[upgradeId].statsPerLevel[level - 1];
+  }
+
+  isEvolved(evolutionId) {
+    return !!this.evolved[evolutionId];
+  }
+
+  getEvolvedList() {
+    return Object.keys(this.evolved).filter((id) => this.evolved[id]);
   }
 }

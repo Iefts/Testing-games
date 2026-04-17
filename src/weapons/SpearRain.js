@@ -9,9 +9,10 @@ export class SpearRain {
     this.cooldown = stats.cooldown;
     this.lastFired = 0;
     this.fallSpeed = 400;
+    this.isEvolved = false;
 
     this.spears = scene.physics.add.group({
-      maxSize: 30,
+      maxSize: 60,
     });
   }
 
@@ -19,6 +20,11 @@ export class SpearRain {
     this.spearCount = stats.spearCount;
     this.damage = stats.damage;
     this.cooldown = stats.cooldown;
+  }
+
+  evolve() {
+    this.isEvolved = true;
+    this.fallSpeed = 560;
   }
 
   update(time, enemies) {
@@ -80,6 +86,28 @@ export class SpearRain {
     spear.damage = this.damage;
     spear.hasHit = false;
 
+    if (this.isEvolved) {
+      spear.setTint(0xaaddff);
+      spear.setScale(1.3);
+      // Lightning streak above the spear
+      const bolt = this.scene.add.rectangle(x, startY - 30, 2, 60, 0xaaeeff, 0.8).setDepth(12);
+      this.scene.tweens.add({
+        targets: bolt,
+        alpha: 0,
+        duration: 200,
+        onComplete: () => bolt.destroy(),
+      });
+      // Lightning flash at spawn
+      const flash = this.scene.add.circle(x, startY, 14, 0xffffff, 0.9).setDepth(12);
+      this.scene.tweens.add({
+        targets: flash,
+        alpha: 0,
+        scale: 2.5,
+        duration: 250,
+        onComplete: () => flash.destroy(),
+      });
+    }
+
     // Destroy when below camera
     this.scene.time.delayedCall(2000, () => {
       if (spear.active) {
@@ -88,6 +116,32 @@ export class SpearRain {
         spear.body.enable = false;
       }
     });
+  }
+
+  lightningBurst(x, y, enemies) {
+    const radius = 40;
+    const gfx = this.scene.add.circle(x, y, radius, 0xaaeeff, 0.5).setDepth(11);
+    this.scene.tweens.add({
+      targets: gfx,
+      alpha: 0,
+      scale: 1.4,
+      duration: 250,
+      onComplete: () => gfx.destroy(),
+    });
+    enemies.getChildren().forEach((enemy) => {
+      if (!enemy.active) return;
+      if (Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y) > radius) return;
+      const bonus = Math.floor(this.damage * 0.4);
+      enemy.takeDamage(bonus);
+      if (this.scene.damageNumbers) {
+        this.scene.damageNumbers.show(enemy.x, enemy.y, bonus, '#ffffff');
+      }
+    });
+    if (this.scene.boss && this.scene.boss.active && this.scene.hitBoss) {
+      if (Phaser.Math.Distance.Between(x, y, this.scene.boss.x, this.scene.boss.y) <= radius) {
+        this.scene.hitBoss(Math.floor(this.damage * 0.4), '#aaeeff');
+      }
+    }
   }
 
   setupCollision(enemies) {
@@ -99,7 +153,12 @@ export class SpearRain {
         spear.hasHit = true;
         enemy.takeDamage(spear.damage);
         if (this.scene.damageNumbers) {
-          this.scene.damageNumbers.show(enemy.x, enemy.y, spear.damage, '#cc8844');
+          this.scene.damageNumbers.show(enemy.x, enemy.y, spear.damage, this.isEvolved ? '#aaeeff' : '#cc8844');
+        }
+
+        // Evolution: lightning AoE at impact
+        if (this.isEvolved) {
+          this.lightningBurst(enemy.x, enemy.y, enemies);
         }
 
         // Spear sticks (stops and fades out)
